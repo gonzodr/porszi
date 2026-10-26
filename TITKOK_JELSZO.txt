@@ -1,0 +1,5 @@
+A privat gonzodr/porszi-titkok repoban levo porszi-titkok.7z jelszava:
+
+tvzce-3bhqu-zhrfk-kfemq-9hzhx-vpvgu
+
+Kibontas: 7-Zip (Windows) vagy `7z x porszi-titkok.7z` (Linux / Pi).
