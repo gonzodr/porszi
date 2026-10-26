@@ -1,0 +1,58 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Verzio: CI-ben -PversionCode=... -PversionName=..., helyben alapertelmezett
+def vCode = (project.findProperty('versionCode') ?: '1').toString().toInteger()
+def vName = (project.findProperty('versionName') ?: "1.${vCode}").toString()
+
+// Alairo kulcs: kornyezeti valtozokbol (CI) vagy gradle property-bol (helyi release build)
+def ksPath = System.getenv('PORSZI_KEYSTORE') ?: project.findProperty('porsziKeystore')
+def ksPass = System.getenv('PORSZI_KEYSTORE_PASSWORD') ?: project.findProperty('porsziKeystorePassword')
+def ksAlias = System.getenv('PORSZI_KEY_ALIAS') ?: project.findProperty('porsziKeyAlias') ?: 'porszi'
+def keyPass = System.getenv('PORSZI_KEY_PASSWORD') ?: project.findProperty('porsziKeyPassword') ?: ksPass
+
+android {
+    namespace 'hu.porszi.app'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'hu.porszi.app'
+        minSdk 26
+        targetSdk 36
+        versionCode vCode
+        versionName vName
+    }
+
+    signingConfigs {
+        if (ksPath) {
+            release {
+                storeFile file(ksPath)
+                storePassword ksPass
+                keyAlias ksAlias
+                keyPassword keyPass
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (ksPath) signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+// A felulet egyetlen forrasa a backend/web mappa: build elott bemasoljuk az app assetjei koze.
+def copyWebUi = tasks.register('copyWebUi', Copy) {
+    from("${rootDir}/../backend/web") {
+        include 'index.html', 'icon.svg'
+    }
+    into("${projectDir}/src/main/assets/www")
+}
+tasks.named('preBuild') { dependsOn copyWebUi }

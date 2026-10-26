@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Porszi</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#0d0d0d" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f9f9f7" media="(prefers-color-scheme: light)">
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface-1: #fcfcfb; --surface-2: #f0efec;
+  --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+  --series-5: #e87ba4; --series-6: #008300; --series-7: #6250d6; --series-8: #e34948;
+  --good: #0ca30c; --warning: #fab219; --serious: #ec835a; --critical: #d03b3b;
+  --floor: #e8e7e2; --wall: #52514e; --path: rgba(11,11,11,0.45);
+  --btn: #ffffff; --btn-hover: #f0efec; --accent: #2a78d6; --accent-ink: #ffffff;
+  --draw: #6250d6;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface-1: #1a1a19; --surface-2: #232321;
+    --text-primary: #f0efec; --text-secondary: #c3c2b7; --text-muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+    --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+    --floor: #2c2c2a; --wall: #c3c2b7; --path: rgba(240,239,236,0.45);
+    --btn: #232321; --btn-hover: #2c2c2a; --accent: #3987e5; --draw: #9085e9;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--page); color: var(--text-primary);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+body { padding: env(safe-area-inset-top) 0 calc(64px + env(safe-area-inset-bottom)); }
+@media (min-width: 900px) { body { padding-bottom: 0; } }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 12px 14px 40px; }
+header { display: flex; align-items: center; gap: 12px; padding: 6px 2px 12px; flex-wrap: wrap; }
+header h1 { font-size: 22px; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--text-muted); display: inline-block; }
+.dot.on { background: var(--good); }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
+  background: var(--surface-2); font-size: 14px; font-weight: 550; border: 1px solid var(--border); }
+.pill .sw { width: 8px; height: 8px; border-radius: 50%; }
+.batt { margin-left: auto; display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.batt-bar { width: 44px; height: 18px; border: 2px solid var(--text-secondary); border-radius: 4px; padding: 2px; position: relative; }
+.batt-bar::after { content: ""; position: absolute; right: -5px; top: 4px; width: 3px; height: 6px; background: var(--text-secondary); border-radius: 0 2px 2px 0; }
+.batt-fill { height: 100%; border-radius: 1px; background: var(--good); }
+nav.tabsbar { display: none; gap: 4px; margin-bottom: 14px; background: var(--surface-2); padding: 4px; border-radius: 12px; width: max-content; }
+nav.tabsbar button, nav.bottom button { border: 0; background: transparent; min-height: 36px; }
+nav.tabsbar button.on { background: var(--surface-1); box-shadow: 0 0 0 1px var(--border); font-weight: 600; }
+nav.bottom { position: fixed; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr);
+  background: var(--surface-1); border-top: 1px solid var(--border); padding: 4px 4px calc(4px + env(safe-area-inset-bottom)); z-index: 5; }
+nav.bottom button { display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 12px; color: var(--text-secondary); padding: 6px 2px; }
+nav.bottom button .ic { font-size: 19px; line-height: 1.1; }
+nav.bottom button.on { color: var(--text-primary); font-weight: 650; }
+@media (min-width: 900px) { nav.tabsbar { display: flex; } nav.bottom { display: none; } }
+.view { display: none; }
+.view.on { display: block; }
+.grid { display: grid; grid-template-columns: 1fr; gap: 14px; }
+@media (min-width: 900px) { .grid { grid-template-columns: 1.25fr 1fr; } .span2 { grid-column: span 2; } }
+.card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 14px; min-width: 0; }
+.card h2 { font-size: 15px; margin: 0 0 10px; font-weight: 650; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.card h2 .sub { margin-left: auto; font-weight: 450; color: var(--text-muted); font-size: 13px; }
+.card h3 { font-size: 13px; margin: 14px 0 6px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .04em; }
+.btns { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+button, select, input { font: inherit; color: var(--text-primary); }
+button { background: var(--btn); border: 1px solid var(--border); border-radius: 10px; padding: 10px 10px; cursor: pointer; min-height: 44px; }
+button:hover { background: var(--btn-hover); }
+button:disabled { opacity: .45; cursor: default; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 600; }
+button.danger { color: var(--critical); }
+button.small { min-height: 34px; padding: 5px 10px; font-size: 14px; }
+.btns button { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 13px; padding: 10px 4px; }
+.btns button .ic { font-size: 20px; line-height: 1; }
+select, input[type=text], input[type=time], input[type=password] { padding: 9px; border-radius: 10px; border: 1px solid var(--border); background: var(--btn); min-height: 44px; }
+.live { display: flex; gap: 18px; margin-top: 12px; color: var(--text-secondary); font-size: 14px; flex-wrap: wrap; }
+.live b { color: var(--text-primary); font-weight: 600; }
+.msg { margin-top: 10px; font-size: 14px; min-height: 1.2em; color: var(--text-secondary); }
+.msg.err { color: var(--critical); }
+.upd { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding: 10px 12px; border-radius: 12px;
+  border: 1px solid var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface-1)); font-weight: 550; }
+.upd[hidden] { display: none; }
+.upd span { flex: 1; }
+.banner { display: none; margin-bottom: 14px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--critical);
+  background: color-mix(in srgb, var(--critical) 12%, var(--surface-1)); font-weight: 550; }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 4px; background: var(--surface-2); padding: 3px; border-radius: 10px; }
+.seg button { border: 0; background: transparent; min-height: 34px; padding: 5px 11px; font-size: 14px; border-radius: 8px; }
+.seg button.on { background: var(--surface-1); box-shadow: 0 0 0 1px var(--border); font-weight: 650; }
+.prow { display: flex; align-items: center; gap: 10px; margin: 8px 0; flex-wrap: wrap; }
+.prow > span:first-child { min-width: 92px; color: var(--text-secondary); font-size: 14px; }
+.toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+#mapbox { position: relative; width: 100%; }
+#map { display: block; margin: 0 auto; border-radius: 10px; background: var(--surface-1); cursor: pointer; touch-action: manipulation; }
+#map.drawing { touch-action: none; cursor: crosshair; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; font-size: 13px; min-height: 34px; }
+.chip .sw { width: 10px; height: 10px; border-radius: 3px; }
+.chip.sel { outline: 2px solid var(--text-primary); outline-offset: -1px; font-weight: 600; }
+.actions { display: flex; gap: 8px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
+.hint { font-size: 13px; color: var(--text-muted); margin-top: 8px; }
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.tile { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+.tile .k { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .04em; }
+.tile .v { font-size: 26px; font-weight: 650; margin-top: 2px; letter-spacing: -0.02em; }
+.tile .s { font-size: 13px; color: var(--text-secondary); }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { fill: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.tip { position: absolute; pointer-events: none; background: var(--surface-1); border: 1px solid var(--border);
+  border-radius: 8px; padding: 6px 9px; font-size: 13px; box-shadow: 0 4px 16px rgba(0,0,0,.18); white-space: nowrap; display: none; z-index: 20; }
+.tip .t { color: var(--text-secondary); font-size: 12px; }
+.legend { display: flex; gap: 14px; font-size: 12px; color: var(--text-secondary); margin-top: 6px; }
+.legend i { display: inline-block; width: 12px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 5px; }
+.meter { margin: 12px 0; }
+.meter .row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; gap: 8px; }
+.meter .row .r { color: var(--text-secondary); font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 8px; }
+.meter .track { height: 8px; border-radius: 4px; background: var(--surface-2); margin-top: 5px; overflow: hidden; }
+.meter .fill { height: 100%; border-radius: 4px; background: var(--series-1); }
+.st-warn { font-weight: 600; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th { text-align: left; font-weight: 550; color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; padding: 6px; border-bottom: 1px solid var(--axis); }
+td { padding: 8px 6px; border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.num, th.num { text-align: right; }
+.scroll { overflow-x: auto; }
+.empty { color: var(--text-muted); font-size: 14px; padding: 8px 0; }
+.err-row { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--grid); font-size: 14px; }
+.err-row .when { color: var(--text-muted); min-width: 108px; font-variant-numeric: tabular-nums; }
+.item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--grid); }
+.item .main { flex: 1; min-width: 0; }
+.item .t1 { font-weight: 600; font-size: 16px; }
+.item .t2 { font-size: 13px; color: var(--text-secondary); }
+.switch { position: relative; width: 46px; height: 28px; flex: none; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch span { position: absolute; inset: 0; border-radius: 999px; background: var(--axis); transition: .15s; cursor: pointer; }
+.switch span::before { content: ""; position: absolute; width: 22px; height: 22px; left: 3px; top: 3px; border-radius: 50%; background: #fff; transition: .15s; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.switch input:checked + span { background: var(--good); }
+.switch input:checked + span::before { transform: translateX(18px); }
+.days { display: flex; gap: 4px; flex-wrap: wrap; }
+.days label { display: inline-flex; }
+.days input { display: none; }
+.days span { min-width: 40px; min-height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: 9px; border: 1px solid var(--border); background: var(--btn); font-size: 14px; cursor: pointer; }
+.days input:checked + span { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 650; }
+dialog { border: 1px solid var(--border); border-radius: 16px; background: var(--surface-1); color: var(--text-primary); padding: 18px; width: min(520px, calc(100vw - 24px)); max-height: 88vh; }
+dialog::backdrop { background: rgba(0,0,0,.45); }
+dialog h3 { margin: 0 0 12px; font-size: 17px; }
+dialog .frow { margin: 12px 0; }
+dialog .frow > label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 5px; }
+dialog .dact { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; flex-wrap: wrap; }
+dialog input[type=text], dialog input[type=password] { width: 100%; }
+.rooms-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.rooms-pick label { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 999px; font-size: 14px; cursor: pointer; }
+input[type=range] { flex: 1; min-width: 140px; accent-color: var(--accent); }
+footer { color: var(--text-muted); font-size: 12px; text-align: center; margin-top: 18px; }
+@media (max-width: 560px) {
+  .tiles { grid-template-columns: 1fr; gap: 6px; }
+  .tile { display: grid; grid-template-columns: 1fr auto; align-items: baseline; column-gap: 10px; padding: 8px 12px; }
+  .tile .v { font-size: 22px; grid-row: span 2; grid-column: 2; text-align: right; }
+  .tile .k, .tile .s { grid-column: 1; }
+}
+@media (max-width: 420px) { .btns { grid-template-columns: repeat(3, 1fr); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Porszi</h1>
+    <span class="dot" id="online" title="kapcsolat"></span>
+    <span class="pill" id="status"><span class="sw"></span><span>…</span></span>
+    <div class="batt" title="akkumulátor"><div class="batt-bar"><div class="batt-fill" id="battfill" style="width:0"></div></div><span id="batttxt">–</span></div>
+  </header>
+  <nav class="tabsbar" id="tabsbar">
+    <button data-view="home" class="on">Főoldal</button><button data-view="sched">Ütemezés</button><button data-view="settings">Beállítások</button><button data-view="stats">Statisztika</button>
+  </nav>
+  <div class="banner" id="errbanner" role="alert"></div>
+  <div class="upd" id="updbanner" hidden><span id="updtext"></span><button class="small primary" id="updbtn">Frissítés</button></div>
+
+  <!-- ============================ FŐOLDAL ============================ -->
+  <div class="view on" id="v-home"><div class="grid">
+    <section class="card">
+      <h2>Vezérlés</h2>
+      <div class="btns">
+        <button data-cmd="start"><span class="ic">▶</span>Indítás</button>
+        <button data-cmd="pause"><span class="ic">⏸</span>Szünet</button>
+        <button data-cmd="stop"><span class="ic">⏹</span>Stop</button>
+        <button data-cmd="home"><span class="ic">⌂</span>Haza</button>
+        <button data-cmd="locate"><span class="ic">🔔</span>Hol vagy?</button>
+      </div>
+      <div class="live" id="live"></div>
+      <div class="msg" id="cmdmsg" aria-live="polite"></div>
+    </section>
+    <section class="card">
+      <h2>Takarítási mód</h2>
+      <div class="prow" id="p-fan"><span>Szívóerő</span><div class="seg"></div></div>
+      <div class="prow" id="p-water"><span>Víz</span><div class="seg"></div></div>
+      <div class="prow" id="p-mode"><span>Üzemmód</span><div class="seg"></div></div>
+      <div class="msg" id="presetmsg"></div>
+    </section>
+
+    <section class="card span2">
+      <h2>Térkép</h2>
+      <div class="toolbar">
+        <div class="seg" id="mapmode">
+          <button data-mode="rooms" class="on">Szobák</button><button data-mode="zones">Zóna</button><button data-mode="restrict">Tiltások</button>
+        </div>
+      </div>
+      <div id="mapbox"><canvas id="map" aria-label="A lakás térképe"></canvas></div>
+
+      <div id="m-rooms">
+        <div class="chips" id="chips"></div>
+        <div class="actions">
+          <button class="primary" id="segbtn" disabled>Kijelölt szobák takarítása</button>
+          <select id="iter" aria-label="Ismétlés"><option value="1">1×</option><option value="2">2×</option><option value="3">3×</option></select>
+          <button id="renamebtn" disabled>Átnevezés</button>
+          <button id="joinbtn" disabled>Összevonás</button>
+          <button id="splitbtn" disabled>Szétvágás</button>
+          <button id="segclear">Kijelölés törlése</button>
+        </div>
+        <div class="hint">Koppints a szobákra a kijelöléshez. Átnevezéshez és szétvágáshoz egy, összevonáshoz két szomszédos szobát jelölj ki.</div>
+      </div>
+
+      <div id="m-zones" hidden>
+        <div class="hint">Húzz téglalapot a térképen a takarítandó területre. Több zónát is rajzolhatsz.</div>
+        <div class="actions">
+          <button class="primary" id="zonebtn" disabled>Zónák takarítása</button>
+          <select id="ziter" aria-label="Ismétlés"><option value="1">1×</option><option value="2">2×</option><option value="3">3×</option></select>
+          <button id="zoneundo" disabled>Utolsó visszavonása</button>
+          <button id="zoneclear" disabled>Összes törlése</button>
+        </div>
+      </div>
+
+      <div id="m-restrict" hidden>
+        <div class="toolbar" style="margin-top:10px">
+          <div class="seg" id="rtool">
+            <button data-t="regular" class="on">⛔ Tiltott zóna</button><button data-t="mop">💧 Mop-tiltás</button><button data-t="wall">▬ Virtuális fal</button><button data-t="select">✋ Kijelölés</button>
+          </div>
+        </div>
+        <div class="hint">Rajzolj a térképre: zónához téglalapot húzz, falhoz vonalat. Törléshez válaszd a „Kijelölés” eszközt, koppints az elemre, majd „Kijelölt törlése”. A változások csak „Mentés” után kerülnek a porszívóra.</div>
+        <div class="actions">
+          <button class="primary" id="rsave" disabled>Mentés</button>
+          <button id="rdel" class="danger" disabled>Kijelölt törlése</button>
+          <button id="rcancel" disabled>Elvetés</button>
+          <span class="hint" id="rcount"></span>
+        </div>
+      </div>
+      <div class="msg" id="mapmsg"></div>
+    </section>
+  </div></div>
+
+  <!-- ============================ ÜTEMEZÉS ============================ -->
+  <div class="view" id="v-sched"><div class="grid">
+    <section class="card span2">
+      <h2>Időzítők <span class="sub"><button class="small primary" id="tadd">+ Új időzítő</button></span></h2>
+      <div id="timers"></div>
+      <div class="msg" id="tmsg"></div>
+    </section>
+    <section class="card" id="dndcard">
+      <h2>Ne zavarj</h2>
+      <div class="hint" style="margin-top:0">Ebben az időszakban a porszívó nem indul el magától, és nem ad hangjelzést.</div>
+      <div class="item"><div class="main"><div class="t1">Bekapcsolva</div></div><label class="switch"><input type="checkbox" id="dnd-on"><span></span></label></div>
+      <div class="prow"><span>Kezdete</span><input type="time" id="dnd-start"></div>
+      <div class="prow"><span>Vége</span><input type="time" id="dnd-end"></div>
+      <div class="actions"><button class="primary" id="dnd-save">Mentés</button></div>
+      <div class="msg" id="dndmsg"></div>
+    </section>
+  </div></div>
+
+  <!-- ============================ BEÁLLÍTÁSOK ============================ -->
+  <div class="view" id="v-settings"><div class="grid">
+    <section class="card">
+      <h2>Fogyóeszközök</h2>
+      <div id="cons"></div>
+      <div class="msg" id="consmsg"></div>
+    </section>
+    <section class="card">
+      <h2>Porszívó</h2>
+      <div id="s-volume">
+        <h3>Hangerő</h3>
+        <div class="prow"><input type="range" id="vol" min="0" max="100" step="10"><span id="volv" style="min-width:44px;text-align:right">–</span><button class="small" id="voltest">Teszthang</button></div>
+      </div>
+      <div class="item" id="s-carpet"><div class="main"><div class="t1">Szőnyeg mód</div><div class="t2">Szőnyegen erősebb szívás</div></div><label class="switch"><input type="checkbox" id="carpet"><span></span></label></div>
+      <div class="item" id="s-persist"><div class="main"><div class="t1">Állandó térkép</div><div class="t2">Megjegyzi a térképet, szobákat, tiltásokat</div></div><label class="switch"><input type="checkbox" id="persist"><span></span></label></div>
+      <div id="s-route"><h3>Takarítási útvonal</h3><div class="seg" id="route"></div><div class="hint">A „mély” útvonal csak mop módban érhető el.</div></div>
+      <div class="msg" id="setmsg"></div>
+    </section>
+    <section class="card">
+      <h2>Wi-Fi beállítás</h2>
+      <div class="hint" style="margin-top:0">Ha a porszívó lekerült a Wi-Fi-ről (pl. új router vagy jelszó), itt adhatod meg újra. Bluetooth nem kell hozzá.</div>
+      <div id="wifistatus" class="msg"></div>
+      <div class="actions"><button class="primary" id="wifiwiz">Wi-Fi varázsló indítása</button><button id="wifichk">Jelenlegi kapcsolat</button></div>
+    </section>
+    <section class="card" id="appcard">
+      <h2>App</h2>
+      <div class="item"><div class="main"><div class="t1" id="appver">Verzió: –</div><div class="t2">Indításkor magától keres frissítést a GitHubon (gonzodr/porszi).</div></div></div>
+      <div class="actions"><button id="updcheck">Frissítés keresése</button></div>
+      <div class="msg" id="updmsg"></div>
+    </section>
+    <section class="card">
+      <h2>Kapcsolat</h2>
+      <div class="hint" style="margin-top:0">A szerver (az otthoni PC) címei. Az app sorban próbálja őket: otthon a helyi címet, máshol a Tailscale-címet.</div>
+      <div id="srvlist"></div>
+      <div class="actions"><button class="small" id="srvedit">Címek szerkesztése</button></div>
+      <div class="msg" id="srvmsg"></div>
+    </section>
+    <section class="card span2">
+      <h2>Haladó</h2>
+      <div class="hint" style="margin-top:0">A ritkán használt karbantartó funkciók (Wi-Fi, térkép törlése, frissítések, MQTT, napló, kézi vezérlés) a Valetudo saját felületén érhetők el.</div>
+      <div class="actions"><button id="vlink">Valetudo felület megnyitása ↗</button><button id="apklink">Android app letöltése</button></div>
+    </section>
+  </div></div>
+
+  <!-- ============================ STATISZTIKA ============================ -->
+  <div class="view" id="v-stats"><div class="grid">
+    <section class="card span2">
+      <h2>Statisztika</h2>
+      <div class="tiles" id="tiles"></div>
+      <div class="msg" id="lastsess"></div>
+    </section>
+    <section class="card">
+      <h2>Akkumulátor <span class="sub"><span class="seg" id="btabs"><button data-h="24" class="on">24 óra</button><button data-h="168">7 nap</button><button data-h="720">30 nap</button></span></span></h2>
+      <div class="chart" id="bchart"></div>
+      <div class="legend"><span><i style="background:var(--series-1)"></i>töltöttség</span><span><i style="background:color-mix(in srgb, var(--series-1) 14%, transparent); border:1px solid var(--grid)"></i>takarítás</span></div>
+    </section>
+    <section class="card">
+      <h2>Akkuhasználat takarításonként <span class="sub">% / perc, kisebb a jobb</span></h2>
+      <div class="chart" id="echart"></div>
+      <div class="msg" id="etxt"></div>
+    </section>
+    <section class="card">
+      <h2>Hibák <span class="sub" id="errcount"></span></h2>
+      <div id="errors"></div>
+    </section>
+    <section class="card span2">
+      <h2>Előzmények</h2>
+      <div class="scroll"><table>
+        <thead><tr><th>Mikor</th><th class="num">Idő</th><th class="num">Terület</th><th class="num">Akku</th><th>Mód</th><th>Szívás</th><th class="num">Hiba</th><th>Vége</th></tr></thead>
+        <tbody id="sessions"></tbody>
+      </table></div>
+    </section>
+  </div></div>
+  <footer id="foot">Porszi</footer>
+</div>
+
+<nav class="bottom" id="bottomnav">
+  <button data-view="home" class="on"><span class="ic">⌂</span>Főoldal</button>
+  <button data-view="sched"><span class="ic">⏰</span>Ütemezés</button>
+  <button data-view="settings"><span class="ic">⚙</span>Beállítások</button>
+  <button data-view="stats"><span class="ic">📈</span>Statisztika</button>
+</nav>
+
+<dialog id="dlg"><form method="dialog" id="dlgform"></form></dialog>
+<div class="tip" id="tip"></div>
+
+<script>
+"use strict";
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const rgba = (v, a) => { const c = css(v); if (!c.startsWith("#")) return c; const n = parseInt(c.slice(1, 7), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; };
+const SERIES = [1,2,3,4,5,6,7,8].map(i => `--series-${i}`);
+const CAP = "/api/v2/robot/capabilities/";
+const MODE_HU = { segment: "szobák", zone: "zóna", spot: "pont", none: "teljes", null: "teljes", resumable: "folytatható", mapping: "térképezés" };
+const FAN_HU = { off: "ki", min: "csendes", low: "halk", medium: "normál", high: "erős", max: "turbó", turbo: "turbó" };
+const WATER_HU = { off: "ki", min: "minimális", low: "kevés", medium: "közepes", high: "sok", max: "maximális" };
+const OPMODE_HU = { vacuum: "porszívó", mop: "mop", vacuum_and_mop: "porszívó + mop" };
+const ROUTE_HU = { normal: "normál", quick: "gyors", intensive: "intenzív", deep: "mély" };
+const END_HU = { docked: "dokkon", idle: "megállt" };
+const CONS_HU = { "brush/main": "Főkefe", "brush/side_right": "Oldalkefe", "brush/side_left": "Oldalkefe (bal)",
+  "filter/main": "Szűrő", "mop/main": "Mop", "bin/main": "Portartály" };
+const STATUS_COLOR = { docked: "--good", idle: "--text-muted", cleaning: "--series-1", returning: "--series-1",
+  paused: "--warning", error: "--critical", manual_control: "--series-7", moving: "--series-1" };
+const DAYS = ["V", "H", "K", "Sze", "Cs", "P", "Szo"]; // JS: 0 = vasárnap
+const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
+
+let state = { overview: null, map: null, caps: new Set(), selected: new Set(), hours: 24, status: null,
+  mode: "rooms", zones: [], restr: null, rtool: "regular", rsel: null, split: null, drag: null, view: "home" };
+
+function fmtTime(iso, opts) { return new Date(iso).toLocaleString("hu-HU", opts || { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }); }
+function fmtDur(s) { if (s == null) return "–"; const m = Math.round(s / 60); return m >= 60 ? `${Math.floor(m/60)} ó ${m%60} p` : `${m} p`; }
+const pad2 = (n) => String(n).padStart(2, "0");
+/* ---- hálózat: böngészőben fetch, appban a natív híd (LAN → Tailscale automatikus váltás) ---- */
+const NATIVE = window.PorsziNative || null;
+const DEFAULT_SERVERS = ["http://192.168.1.69:8080", "http://100.110.158.68:8080"];
+function loadCfg() { try { return JSON.parse(localStorage.getItem("porszi.cfg")) || {}; } catch (e) { return {}; } }
+function saveCfg(c) { try { localStorage.setItem("porszi.cfg", JSON.stringify(c)); } catch (e) {} }
+let CFG = loadCfg(); if (!Array.isArray(CFG.servers) || !CFG.servers.length) CFG.servers = DEFAULT_SERVERS.slice();
+let activeBase = CFG.lastBase && CFG.servers.includes(CFG.lastBase) ? CFG.lastBase : CFG.servers[0];
+const pending = new Map(); let reqSeq = 0;
+window.__porsziCb = (id, status, text, err) => { const p = pending.get(id); if (!p) return; pending.delete(id);
+  if (err) p.reject(new Error(err)); else p.resolve({ status, text }); };
+function nativeRequest(method, url, headers, body, timeoutMs, route) {
+  return new Promise((resolve, reject) => { const id = String(++reqSeq); pending.set(id, { resolve, reject });
+    NATIVE.request(id, method, url, JSON.stringify(headers || {}), body == null ? "" : String(body), timeoutMs || 12000, route || ""); });
+}
+async function rawFetch(path, opts = {}) {
+  const method = opts.method || "GET", headers = opts.headers || {}, body = opts.body;
+  if (!NATIVE) { const r = await fetch(path, opts); return { status: r.status, text: await r.text() }; }
+  const order = [activeBase, ...CFG.servers.filter(s => s !== activeBase)];
+  let lastErr;
+  for (const base of order) {
+    try {
+      const r = await nativeRequest(method, base.replace(/\/$/, "") + path, headers, body, base === activeBase ? 8000 : 6000);
+      if (base !== activeBase) { activeBase = base; CFG.lastBase = base; saveCfg(CFG); }
+      return r;
+    } catch (e) { lastErr = e; }
+  }
+  throw new Error(`Nem érem el a szervert (${lastErr ? lastErr.message : "?"}). Otthon vagy, vagy be van kapcsolva a Tailscale?`);
+}
+async function api(path, opts) {
+  const r = await rawFetch(path, opts);
+  const txt = r.text; let j = {}; try { j = txt ? JSON.parse(txt) : {}; } catch (e) { j = { text: txt }; }
+  if (r.status < 200 || r.status >= 300) throw new Error(j.error || j.text || `HTTP ${r.status}`);
+  return j;
+}
+function openExternal(url) { if (NATIVE) NATIVE.openExternal(url); else window.open(url, "_blank", "noopener"); }
+const write = (method, path, body) => api(path, { method, headers: { "Content-Type": "application/json", "X-Porszi": "1" }, body: body === undefined ? undefined : JSON.stringify(body) });
+function el(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v === false || v == null) continue;
+    if (k === "class") e.className = v; else if (k === "style") e.setAttribute("style", v);
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v); else e.setAttribute(k, v === true ? "" : v);
+  }
+  for (const k of kids) if (k != null) e.append(k.nodeType ? k : document.createTextNode(String(k)));
+  return e;
+}
+let lastSayAt = 0;
+function say(target, text, err, quiet) { const m = typeof target === "string" ? $(target) : target;
+  if (quiet && Date.now() - lastSayAt < 5000) return; if (!quiet) lastSayAt = Date.now();
+  m.className = "msg" + (err ? " err" : ""); m.textContent = text; }
+async function act(target, fn, okText) {
+  say(target, "Küldöm…");
+  try { const r = await fn(); say(target, okText || "✓ Kész."); return r ?? true; }
+  catch (e) { say(target, `Nem sikerült: ${e.message}`, true); return false; }
+}
+
+/* ------------------------------ dialog ------------------------------- */
+function dialog(title, bodyNodes, buttons) {
+  return new Promise(resolve => {
+    const d = $("#dlg"), f = $("#dlgform"); f.textContent = "";
+    f.append(el("h3", {}, title), ...bodyNodes);
+    const row = el("div", { class: "dact" });
+    for (const b of buttons) row.append(el("button", { value: b.value, class: b.cls || "" }, b.label));
+    f.append(row);
+    d.onclose = () => resolve(d.returnValue);
+    d.returnValue = ""; d.showModal();
+  });
+}
+async function confirmBox(title, text, okLabel, danger) {
+  return (await dialog(title, [el("p", {}, text)], [{ label: "Mégse", value: "no" }, { label: okLabel || "Rendben", value: "ok", cls: danger ? "primary danger" : "primary" }])) === "ok";
+}
+async function promptBox(title, label, value) {
+  const inp = el("input", { type: "text", value: value || "", maxlength: 40 });
+  setTimeout(() => { inp.focus(); inp.select(); }, 50);
+  const r = await dialog(title, [el("div", { class: "frow" }, el("label", {}, label), inp)], [{ label: "Mégse", value: "no" }, { label: "Mentés", value: "ok", cls: "primary" }]);
+  return r === "ok" ? inp.value.trim() : null;
+}
+
+/* ------------------------------ views -------------------------------- */
+function showView(v) {
+  state.view = v;
+  $$(".view").forEach(x => x.classList.toggle("on", x.id === `v-${v}`));
+  $$("[data-view]").forEach(b => b.classList.toggle("on", b.dataset.view === v));
+  if (v === "sched") { loadTimers(); loadDnd(); }
+  if (v === "settings") loadSettings();
+  if (v === "stats") refreshCharts();
+  if (v === "home") { if (state.map) drawMap(); else refreshMap(); }
+  window.scrollTo(0, 0);
+}
+$$("[data-view]").forEach(b => b.addEventListener("click", () => showView(b.dataset.view)));
+
+/* ------------------------------ overview ------------------------------ */
+function renderOverview(o) {
+  state.overview = o;
+  const L = o.live || {};
+  state.status = L.status;
+  $("#online").classList.toggle("on", !!o.online);
+  $("#online").title = o.online ? "a porszívó elérhető" : "a porszívó most nem elérhető";
+  const pill = $("#status");
+  pill.querySelector(".sw").style.background = `var(${STATUS_COLOR[L.status] || "--text-muted"})`;
+  pill.lastElementChild.textContent = (L.status === "error" ? "⚠ " : "") + (L.status_hu || "?") +
+    (L.status === "cleaning" && L.flag && L.flag !== "none" ? ` (${MODE_HU[L.flag] || L.flag})` : "") + (o.online ? "" : " · offline");
+  const b = L.battery;
+  $("#batttxt").textContent = b == null ? "–" : `${b}%` + (L.battery_flag === "charging" ? " ⚡" : "");
+  const f = $("#battfill"); f.style.width = `${b || 0}%`;
+  f.style.background = `var(${b == null ? "--text-muted" : b <= 15 ? "--critical" : b <= 30 ? "--warning" : "--good"})`;
+  const ban = $("#errbanner");
+  if (L.error && L.status === "error") { ban.style.display = "block"; ban.textContent = `⚠ Hiba: ${L.error.message || "ismeretlen"} (${L.error.subsystem || "?"}, kód ${L.error.vendorErrorCode ?? "?"})`; }
+  else ban.style.display = "none";
+  const live = $("#live"); live.textContent = "";
+  if (L.current) live.append(el("span", {}, "Most: ", el("b", {}, fmtDur(L.current.time))), el("span", {}, "Terület: ", el("b", {}, `${((L.current.area || 0) / 10000).toFixed(1)} m²`)));
+  const busy = ["cleaning", "returning", "moving"].includes(L.status);
+  $$("[data-cmd]").forEach(btn => { const c = btn.dataset.cmd;
+    btn.disabled = !o.online || (c === "start" && busy) || (c === "pause" && !busy) || (c === "home" && L.status === "docked"); });
+  markPresets(L);
+  const S = o.stats; const tiles = $("#tiles"); tiles.textContent = "";
+  for (const [k, label] of [["week", "Ezen a héten"], ["month", "Ebben a hónapban"], ["all", "Összesen"]]) {
+    const t = S[k];
+    tiles.append(el("div", { class: "tile" }, el("div", { class: "k" }, label), el("div", { class: "v" }, `${t.area_m2.toLocaleString("hu-HU")} m²`), el("div", { class: "s" }, `${t.count} takarítás · ${fmtDur(t.minutes * 60)}`)));
+  }
+  const ls = o.last_session;
+  $("#lastsess").textContent = ls ? `Utolsó takarítás: ${fmtTime(ls.started_at)} · ${fmtDur(ls.clean_time_s)} · ${ls.area_m2 ?? "–"} m²` +
+    (ls.battery_start != null && ls.battery_end != null ? ` · akku ${ls.battery_start}% → ${ls.battery_end}%` : "") + (ls.ended_at ? "" : " · folyamatban") : "Még nincs rögzített takarítás.";
+  if (state.view === "settings") renderConsumables(o.consumables);
+  $("#errcount").textContent = o.errors_7d ? `${o.errors_7d} az elmúlt 7 napban` : "";
+  if (o.valetudo_url) state.valetudoUrl = o.valetudo_url;
+  $("#foot").textContent = `Porszi · frissítve ${new Date().toLocaleTimeString("hu-HU")}`;
+  updateRoomButtons();
+}
+async function sendCmd(body, msgEl) {
+  const ok = await act(msgEl || "#cmdmsg", () => write("POST", "/api/command", body), "✓ Parancs elküldve.");
+  if (ok) { setTimeout(refreshOverview, 1200); setTimeout(refreshOverview, 4000); }
+  return ok;
+}
+$$("[data-cmd]").forEach(b => b.addEventListener("click", () => sendCmd({ action: b.dataset.cmd })));
+
+/* ------------------------------ presets ------------------------------ */
+const PRESETS = [["#p-fan", "FanSpeedControlCapability", FAN_HU, "fan_speed"], ["#p-water", "WaterUsageControlCapability", WATER_HU, "water_grade"], ["#p-mode", "OperationModeControlCapability", OPMODE_HU, "operation_mode"]];
+async function loadPresets() {
+  for (const [sel, cap, hu] of PRESETS) {
+    const row = $(sel); const box = row.querySelector(".seg"); box.textContent = "";
+    if (!state.caps.has(cap)) { row.hidden = true; continue; }
+    try {
+      const list = await api(`${CAP}${cap}/presets`);
+      for (const p of list) box.append(el("button", { "data-v": p, onclick: () => setPreset(cap, p) }, hu[p] || p));
+    } catch (e) { row.hidden = true; }
+  }
+  if (state.overview) markPresets(state.overview.live || {});
+}
+function markPresets(L) { for (const [sel, , , key] of PRESETS) $$(`${sel} .seg button`).forEach(b => b.classList.toggle("on", b.dataset.v === L[key])); }
+async function setPreset(cap, name) {
+  const ok = await act("#presetmsg", () => write("PUT", `${CAP}${cap}/preset`, { name }), "✓ Beállítva.");
+  if (ok) setTimeout(refreshOverview, 800);
+}
+
+/* -------------------------------- map --------------------------------- */
+const mapCv = $("#map");
+let G = null; // geometry
+
+function buildMap(m) {
+  state.map = m;
+  const layers = m.layers || [];
+  if (!layers.length) { G = null; say("#mapmsg", "A porszívónak még nincs térképe."); return; }
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const l of layers) { const d = l.dimensions; minX = Math.min(minX, d.x.min); minY = Math.min(minY, d.y.min); maxX = Math.max(maxX, d.x.max); maxY = Math.max(maxY, d.y.max); }
+  const pad = 6; minX -= pad; minY -= pad; maxX += pad; maxY += pad;
+  const w = maxX - minX + 1, h = maxY - minY + 1;
+  const segs = layers.filter(l => l.type === "segment").sort((a, b) => Number(a.metaData.segmentId) - Number(b.metaData.segmentId));
+  const segIndex = new Int16Array(w * h).fill(-1);
+  segs.forEach((l, i) => { const p = l.compressedPixels; for (let k = 0; k < p.length; k += 3) { const y = p[k + 1] - minY, x0 = p[k] - minX; for (let c = 0; c < p[k + 2]; c++) segIndex[y * w + x0 + c] = i; } });
+  G = { minX, minY, w, h, segs, segIndex, ps: m.pixelSize || 5, layers };
+  const ids = new Set(segs.map(s => String(s.metaData.segmentId)));
+  for (const s of [...state.selected]) if (!ids.has(s)) state.selected.delete(s);
+  drawMap();
+  renderChips();
+  say("#mapmsg", `Térkép frissítve: ${new Date().toLocaleTimeString("hu-HU")}`, false, true);
+}
+const hexRgb = (v) => { const c = css(v); const n = parseInt(c.slice(1, 7), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; };
+const mix = (a, b, t) => a.map((x, i) => Math.round(x * (1 - t) + b[i] * t));
+function drawMap() {
+  if (!G || !state.map || state.view !== "home") return;
+  const { minX, minY, w, h, segs, ps } = G;
+  const img = new ImageData(w, h);
+  const paint = (l, rgb) => { const p = l.compressedPixels; for (let i = 0; i < p.length; i += 3) { const y = p[i + 1] - minY, x0 = p[i] - minX; for (let k = 0; k < p[i + 2]; k++) { const j = (y * w + x0 + k) * 4; img.data[j] = rgb[0]; img.data[j + 1] = rgb[1]; img.data[j + 2] = rgb[2]; img.data[j + 3] = 255; } } };
+  const surf = hexRgb("--surface-1");
+  for (const l of G.layers) if (l.type === "floor") paint(l, hexRgb("--floor"));
+  const anySel = state.mode === "rooms" && state.selected.size > 0;
+  segs.forEach((l, i) => { const sel = state.selected.has(String(l.metaData.segmentId));
+    const t = state.mode !== "rooms" ? 0.62 : anySel ? (sel ? 0 : 0.78) : 0.45; paint(l, mix(hexRgb(SERIES[i % SERIES.length]), surf, t)); });
+  for (const l of G.layers) if (l.type === "wall") paint(l, hexRgb("--wall"));
+
+  const box = $("#mapbox").clientWidth || 320;
+  const maxH = Math.max(280, window.innerHeight * 0.62);
+  const scale = Math.min(box / w, maxH / h);
+  const dpr = window.devicePixelRatio || 1;
+  mapCv.style.width = `${Math.round(w * scale)}px`; mapCv.style.height = `${Math.round(h * scale)}px`;
+  mapCv.width = Math.round(w * scale * dpr); mapCv.height = Math.round(h * scale * dpr);
+  G.scale = scale;
+  const ctx = mapCv.getContext("2d");
+  const tmp = document.createElement("canvas"); tmp.width = w; tmp.height = h; tmp.getContext("2d").putImageData(img, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+  ctx.setTransform(dpr * scale, 0, 0, dpr * scale, 0, 0);
+  ctx.clearRect(0, 0, w, h); ctx.drawImage(tmp, 0, 0);
+  const lw = 1 / scale;
+  const P = (x, y) => [x / ps - minX, y / ps - minY];
+  const poly = (pts) => { ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); };
+  const editingRestr = state.mode === "restrict" && state.restr;
+  for (const e of state.map.entities || []) {
+    const pts = e.points || [];
+    if (!editingRestr && (e.type === "no_go_area" || e.type === "no_mop_area")) {
+      const v = e.type === "no_go_area" ? "--critical" : "--series-1";
+      poly([0, 2, 4, 6].map(i => P(pts[i], pts[i + 1]))); ctx.fillStyle = rgba(v, 0.18); ctx.fill(); ctx.strokeStyle = css(v); ctx.lineWidth = 2 * lw; ctx.stroke();
+    } else if (!editingRestr && e.type === "virtual_wall") {
+      const [a, b] = P(pts[0], pts[1]), [c, d] = P(pts[2], pts[3]);
+      ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(c, d); ctx.strokeStyle = css("--critical"); ctx.lineWidth = 3 * lw; ctx.lineCap = "round"; ctx.stroke();
+    } else if (e.type === "path") {
+      ctx.beginPath(); for (let i = 0; i < pts.length; i += 2) { const [x, y] = P(pts[i], pts[i + 1]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+      ctx.strokeStyle = css("--path"); ctx.lineWidth = 1.2 * lw; ctx.lineJoin = "round"; ctx.stroke();
+    }
+  }
+  for (const e of state.map.entities || []) {
+    const pts = e.points || [];
+    if (e.type === "charger_location") {
+      const [x, y] = P(pts[0], pts[1]); const r = 7 * lw;
+      ctx.fillStyle = css("--good"); ctx.strokeStyle = css("--surface-1"); ctx.lineWidth = 2 * lw;
+      ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - r, y - r, 2 * r, 2 * r, 3 * lw) : ctx.rect(x - r, y - r, 2 * r, 2 * r); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#fff"; ctx.font = `${10 * lw}px system-ui`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("⚡", x, y + 0.5 * lw);
+    } else if (e.type === "robot_position") {
+      const [x, y] = P(pts[0], pts[1]); const r = 9 * lw; const ang = ((e.metaData && e.metaData.angle) || 0) * Math.PI / 180;
+      ctx.fillStyle = css("--text-primary"); ctx.strokeStyle = css("--surface-1"); ctx.lineWidth = 2 * lw;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.lineWidth = 2.5 * lw; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.sin(ang) * r * 0.85, y - Math.cos(ang) * r * 0.85); ctx.stroke();
+    }
+  }
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  segs.forEach((l) => {
+    const d = l.dimensions, name = segName(l), x = d.x.mid - minX, y = d.y.mid - minY;
+    ctx.font = `600 ${12 * lw}px system-ui, sans-serif`;
+    const tw = ctx.measureText(name).width + 10 * lw;
+    ctx.fillStyle = rgba("--surface-1", 0.85);
+    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - tw / 2, y - 9 * lw, tw, 18 * lw, 9 * lw) : ctx.rect(x - tw / 2, y - 9 * lw, tw, 18 * lw); ctx.fill();
+    ctx.fillStyle = css("--text-primary"); ctx.fillText(name, x, y + 0.5 * lw);
+  });
+  const drawRect = (r, v, dashed, selected) => {
+    const [x0, y0] = P(r.x0, r.y0), [x1, y1] = P(r.x1, r.y1);
+    const rx = Math.min(x0, x1), ry = Math.min(y0, y1), rw = Math.abs(x1 - x0), rh = Math.abs(y1 - y0);
+    ctx.fillStyle = rgba(v, selected ? 0.34 : 0.2); ctx.fillRect(rx, ry, rw, rh);
+    ctx.setLineDash(dashed ? [5 * lw, 3 * lw] : []); ctx.strokeStyle = css(v); ctx.lineWidth = (selected ? 3 : 2) * lw; ctx.strokeRect(rx, ry, rw, rh); ctx.setLineDash([]);
+    return [rx, ry];
+  };
+  const drawLine = (l, v, selected) => { const [a, b] = P(l.x0, l.y0), [c, d] = P(l.x1, l.y1);
+    ctx.beginPath(); ctx.moveTo(a, b); ctx.lineTo(c, d); ctx.strokeStyle = css(v); ctx.lineWidth = (selected ? 6 : 4) * lw; ctx.lineCap = "round"; ctx.stroke(); };
+  if (state.mode === "zones") state.zones.forEach((z, i) => { const [rx, ry] = drawRect(z, "--draw", false);
+    ctx.fillStyle = css("--draw"); ctx.font = `700 ${12 * lw}px system-ui`; ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.fillText(String(i + 1), rx + 4 * lw, ry + 3 * lw); });
+  if (editingRestr) {
+    state.restr.zones.forEach((z, i) => drawRect(z, z.type === "mop" ? "--series-1" : "--critical", false, state.rsel && state.rsel.kind === "zone" && state.rsel.i === i));
+    state.restr.walls.forEach((wl, i) => drawLine(wl, "--critical", state.rsel && state.rsel.kind === "wall" && state.rsel.i === i));
+  }
+  if (state.split && !state.split.armed) drawLine(state.split, "--draw", false);
+  const dr = state.drag;
+  if (dr && dr.cur) { const shape = { x0: dr.x0, y0: dr.y0, x1: dr.cur.x, y1: dr.cur.y };
+    if (dr.kind === "line") drawLine(shape, "--draw", false); else drawRect(shape, dr.kind === "mop" ? "--series-1" : dr.kind === "regular" ? "--critical" : "--draw", true); }
+}
+function segName(l) { return l.metaData.name || `Szoba ${l.metaData.segmentId}`; }
+function segById(id) { return G?.segs.find(s => String(s.metaData.segmentId) === String(id)); }
+function toCm(ev) { const r = mapCv.getBoundingClientRect(); const px = (ev.clientX - r.left) / G.scale, py = (ev.clientY - r.top) / G.scale;
+  return { px, py, x: Math.round((px + G.minX) * G.ps), y: Math.round((py + G.minY) * G.ps) }; }
+function segAt(px, py) {
+  const x = Math.floor(px), y = Math.floor(py);
+  for (let rad = 0; rad <= 3; rad++) for (let dy = -rad; dy <= rad; dy++) for (let dx = -rad; dx <= rad; dx++) {
+    const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= G.w || yy >= G.h) continue;
+    const idx = G.segIndex[yy * G.w + xx]; if (idx >= 0) return G.segs[idx];
+  }
+  return null;
+}
+function renderChips() {
+  const c = $("#chips"); c.textContent = "";
+  if (!G) return;
+  G.segs.forEach((l, i) => {
+    const id = String(l.metaData.segmentId);
+    const area = l.metaData.area ? ` · ${(l.metaData.area / 10000).toFixed(1)} m²` : "";
+    c.append(el("button", { class: "chip" + (state.selected.has(id) ? " sel" : ""), "aria-pressed": state.selected.has(id) ? "true" : "false", onclick: () => toggleSeg(id) },
+      el("span", { class: "sw", style: `background: var(${SERIES[i % SERIES.length]})` }), segName(l) + area));
+  });
+  updateRoomButtons();
+}
+function updateRoomButtons() {
+  const n = state.selected.size, online = !!state.overview?.online;
+  $("#segbtn").disabled = !n || !online;
+  $("#segbtn").textContent = n ? `Kijelölt szobák takarítása (${n})` : "Kijelölt szobák takarítása";
+  $("#renamebtn").disabled = n !== 1 || !online;
+  $("#joinbtn").disabled = n !== 2 || !online;
+  $("#splitbtn").disabled = n !== 1 || !online;
+  $("#renamebtn").hidden = !state.caps.has("MapSegmentRenameCapability");
+  $("#joinbtn").hidden = $("#splitbtn").hidden = !state.caps.has("MapSegmentEditCapability");
+  $("#zonebtn").disabled = !state.zones.length || !online;
+  $("#zonebtn").textContent = state.zones.length ? `Zónák takarítása (${state.zones.length})` : "Zónák takarítása";
+  $("#zoneundo").disabled = $("#zoneclear").disabled = !state.zones.length;
+}
+function toggleSeg(id) { state.selected.has(id) ? state.selected.delete(id) : state.selected.add(id); state.split = null; drawMap(); renderChips(); }
+
+/* map pointer handling */
+function drawKind() {
+  if (state.split?.armed) return "line";
+  if (state.mode === "zones") return "zone";
+  if (state.mode === "restrict" && state.restr && state.rtool !== "select") return state.rtool === "wall" ? "line" : state.rtool;
+  return null;
+}
+mapCv.addEventListener("pointerdown", (ev) => {
+  if (!G) return;
+  const kind = drawKind(); if (!kind) return;
+  const p = toCm(ev);
+  state.drag = { kind, x0: p.x, y0: p.y, cur: null, sx: ev.clientX, sy: ev.clientY };
+  mapCv.setPointerCapture(ev.pointerId); ev.preventDefault();
+});
+mapCv.addEventListener("pointermove", (ev) => { if (!state.drag) return; const p = toCm(ev); state.drag.cur = { x: p.x, y: p.y }; drawMap(); });
+mapCv.addEventListener("pointerup", (ev) => {
+  if (!G) return;
+  const dr = state.drag; state.drag = null;
+  const p = toCm(ev);
+  if (dr) {
+    if (Math.hypot(ev.clientX - dr.sx, ev.clientY - dr.sy) > 12) {
+      const shape = { x0: Math.min(dr.x0, p.x), y0: Math.min(dr.y0, p.y), x1: Math.max(dr.x0, p.x), y1: Math.max(dr.y0, p.y) };
+      if (state.split?.armed) { state.split = { x0: dr.x0, y0: dr.y0, x1: p.x, y1: p.y, armed: false }; drawMap(); confirmSplit(); return; }
+      if (dr.kind === "zone") state.zones.push(shape);
+      else if (dr.kind === "line") { state.restr.walls.push({ x0: dr.x0, y0: dr.y0, x1: p.x, y1: p.y }); markRestrDirty(); }
+      else { state.restr.zones.push({ ...shape, type: dr.kind }); markRestrDirty(); }
+    }
+    drawMap(); updateRoomButtons(); return;
+  }
+  if (state.mode === "rooms") { const s = segAt(p.px, p.py); if (s) toggleSeg(String(s.metaData.segmentId)); }
+  else if (state.mode === "restrict" && state.restr && state.rtool === "select") { state.rsel = hitRestriction(p.x, p.y); $("#rdel").disabled = !state.rsel; drawMap(); }
+});
+mapCv.addEventListener("pointercancel", () => { state.drag = null; drawMap(); });
+
+function setMapMode(mode) {
+  state.mode = mode; state.split = null; state.rsel = null;
+  $$("#mapmode button").forEach(b => b.classList.toggle("on", b.dataset.mode === mode));
+  $("#m-rooms").hidden = mode !== "rooms"; $("#m-zones").hidden = mode !== "zones"; $("#m-restrict").hidden = mode !== "restrict";
+  mapCv.classList.toggle("drawing", mode !== "rooms");
+  if (mode === "restrict") loadRestrictions(); else drawMap();
+  updateRoomButtons();
+}
+$$("#mapmode button").forEach(b => b.addEventListener("click", () => setMapMode(b.dataset.mode)));
+
+/* rooms actions */
+$("#segbtn").addEventListener("click", () => sendCmd({ action: "segments", segment_ids: [...state.selected], iterations: Number($("#iter").value) }, $("#mapmsg")));
+$("#segclear").addEventListener("click", () => { state.selected.clear(); state.split = null; mapCv.classList.remove("drawing"); drawMap(); renderChips(); });
+$("#renamebtn").addEventListener("click", async () => {
+  const id = [...state.selected][0]; const seg = segById(id);
+  const name = await promptBox("Szoba átnevezése", "Új név", seg.metaData.name || "");
+  if (name == null) return;
+  if (await act("#mapmsg", () => write("POST", "/api/room-name", { segment_id: id, name }), `✓ Átnevezve: ${name || "(név nélkül)"}`)) { seg.metaData.name = name || undefined; drawMap(); renderChips(); setTimeout(refreshMap, 800); }
+});
+$("#joinbtn").addEventListener("click", async () => {
+  const [a, b] = [...state.selected];
+  if (!await confirmBox("Szobák összevonása", `Összevonod: „${segName(segById(a))}” + „${segName(segById(b))}”? A két szobából egy lesz. Csak egymás melletti szobáknál működik.`, "Összevonás")) return;
+  if (await act("#mapmsg", () => write("PUT", `${CAP}MapSegmentEditCapability`, { action: "join_segments", segment_a_id: a, segment_b_id: b }), "✓ Összevonva.")) { state.selected.clear(); setTimeout(refreshMap, 2500); }
+});
+$("#splitbtn").addEventListener("click", () => { state.split = { armed: true }; mapCv.classList.add("drawing"); say("#mapmsg", "Húzz egy vonalat a kijelölt szobán keresztül, ahol ketté akarod vágni."); });
+async function confirmSplit() {
+  const id = [...state.selected][0]; const sp = state.split;
+  const ok = await confirmBox("Szoba szétvágása", `Szétvágod „${segName(segById(id))}” szobát a berajzolt vonal mentén?`, "Szétvágás");
+  mapCv.classList.toggle("drawing", state.mode !== "rooms");
+  if (ok && await act("#mapmsg", () => write("PUT", `${CAP}MapSegmentEditCapability`, { action: "split_segment", segment_id: id, pA: { x: sp.x0, y: sp.y0 }, pB: { x: sp.x1, y: sp.y1 } }), "✓ Szétvágva.")) { state.selected.clear(); setTimeout(refreshMap, 2500); }
+  state.split = null; drawMap(); renderChips();
+}
+
+/* zones */
+const rectPoints = (z) => ({ pA: { x: z.x0, y: z.y0 }, pB: { x: z.x1, y: z.y0 }, pC: { x: z.x1, y: z.y1 }, pD: { x: z.x0, y: z.y1 } });
+$("#zonebtn").addEventListener("click", async () => {
+  const ok = await act("#mapmsg", () => write("PUT", `${CAP}ZoneCleaningCapability`, { action: "clean", zones: state.zones.map(z => ({ points: rectPoints(z) })), iterations: Number($("#ziter").value) }), "✓ Zónatakarítás elindítva.");
+  if (ok) { state.zones = []; drawMap(); updateRoomButtons(); setTimeout(refreshOverview, 1500); }
+});
+$("#zoneundo").addEventListener("click", () => { state.zones.pop(); drawMap(); updateRoomButtons(); });
+$("#zoneclear").addEventListener("click", () => { state.zones = []; drawMap(); updateRoomButtons(); });
+
+/* virtual restrictions */
+async function loadRestrictions() {
+  try {
+    const r = await api(`${CAP}CombinedVirtualRestrictionsCapability`);
+    const bb = (pts) => { const xs = [pts.pA.x, pts.pB.x, pts.pC.x, pts.pD.x], ys = [pts.pA.y, pts.pB.y, pts.pC.y, pts.pD.y]; return { x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) }; };
+    state.restr = { zones: (r.restrictedZones || []).map(z => ({ ...bb(z.points), type: z.type || "regular" })),
+                    walls: (r.virtualWalls || []).map(wl => ({ x0: wl.points.pA.x, y0: wl.points.pA.y, x1: wl.points.pB.x, y1: wl.points.pB.y })) };
+    markRestrDirty(false); drawMap();
+  } catch (e) { state.restr = null; say("#mapmsg", `A tiltások nem tölthetők be: ${e.message}`, true); }
+}
+function markRestrDirty(v = true) {
+  if (!state.restr) return; state.restr.dirty = v;
+  $("#rsave").disabled = $("#rcancel").disabled = !v;
+  const z = state.restr.zones.filter(x => x.type !== "mop").length, m = state.restr.zones.filter(x => x.type === "mop").length, wl = state.restr.walls.length;
+  $("#rcount").textContent = `${z} tiltott zóna · ${m} mop-tiltás · ${wl} fal` + (v ? " · nincs mentve" : "");
+}
+function hitRestriction(x, y) {
+  const R = state.restr; const tol = 16 / G.scale * G.ps; // ~16 css px, cm-ben
+  for (let i = R.walls.length - 1; i >= 0; i--) { const w = R.walls[i]; const dx = w.x1 - w.x0, dy = w.y1 - w.y0; const L = dx * dx + dy * dy || 1;
+    const t = Math.max(0, Math.min(1, ((x - w.x0) * dx + (y - w.y0) * dy) / L)); if (Math.hypot(x - (w.x0 + t * dx), y - (w.y0 + t * dy)) < tol) return { kind: "wall", i }; }
+  for (let i = R.zones.length - 1; i >= 0; i--) { const z = R.zones[i]; if (x >= z.x0 && x <= z.x1 && y >= z.y0 && y <= z.y1) return { kind: "zone", i }; }
+  return null;
+}
+$$("#rtool button").forEach(b => b.addEventListener("click", () => { state.rtool = b.dataset.t; state.rsel = null; $("#rdel").disabled = true;
+  $$("#rtool button").forEach(x => x.classList.toggle("on", x === b)); drawMap(); }));
+$("#rdel").addEventListener("click", () => { const s = state.rsel; if (!s) return; (s.kind === "wall" ? state.restr.walls : state.restr.zones).splice(s.i, 1); state.rsel = null; $("#rdel").disabled = true; markRestrDirty(); drawMap(); });
+$("#rcancel").addEventListener("click", () => { state.rsel = null; loadRestrictions(); });
+$("#rsave").addEventListener("click", async () => {
+  const R = state.restr;
+  const body = { virtualWalls: R.walls.map(w => ({ points: { pA: { x: w.x0, y: w.y0 }, pB: { x: w.x1, y: w.y1 } } })),
+                 restrictedZones: R.zones.map(z => ({ points: rectPoints(z), type: z.type === "mop" ? "mop" : "regular" })) };
+  if (await act("#mapmsg", () => write("PUT", `${CAP}CombinedVirtualRestrictionsCapability`, body), "✓ Tiltások mentve a porszívóra.")) { markRestrDirty(false); setTimeout(refreshMap, 2000); }
+});
+
+/* ------------------------------ timers -------------------------------- */
+// A Valetudo UTC-ben tárolja (nap + óra:perc). Átváltás helyi időre és vissza.
+function utcToLocal(dow, hour, minute) { const d = new Date(); d.setUTCDate(d.getUTCDate() + ((dow - d.getUTCDay()) + 7) % 7); d.setUTCHours(hour, minute, 0, 0); return { dow: d.getDay(), hour: d.getHours(), minute: d.getMinutes() }; }
+function localToUtc(dow, hour, minute) { const d = new Date(); d.setDate(d.getDate() + ((dow - d.getDay()) + 7) % 7); d.setHours(hour, minute, 0, 0); return { dow: d.getUTCDay(), hour: d.getUTCHours(), minute: d.getUTCMinutes() }; }
+const timerLocal = (t) => { const L = t.dow.map(d => utcToLocal(d, t.hour, t.minute)); return { days: L.map(x => x.dow), hour: L[0]?.hour ?? t.hour, minute: L[0]?.minute ?? t.minute }; };
+let timerProps = null;
+async function loadTimers() {
+  const box = $("#timers");
+  try {
+    timerProps = timerProps || await api("/api/v2/timers/properties");
+    if (!G) await refreshMap();
+    const timers = Object.values(await api("/api/v2/timers"));
+    box.textContent = "";
+    if (!timers.length) box.append(el("div", { class: "empty" }, "Még nincs időzítő. Az „+ Új időzítő” gombbal adhatsz hozzá."));
+    timers.sort((a, b) => { const A = timerLocal(a), B = timerLocal(b); return A.hour * 60 + A.minute - (B.hour * 60 + B.minute); });
+    for (const t of timers) {
+      const L = timerLocal(t);
+      const days = DAY_ORDER.filter(d => L.days.includes(d)).map(d => DAYS[d]);
+      const what = t.action.type === "segment_cleanup" ? "Szobák: " + (t.action.params.segment_ids || []).map(id => { const s = segById(id); return s ? segName(s) : `#${id}`; }).join(", ") + (t.action.params.iterations > 1 ? ` (${t.action.params.iterations}×)` : "") : "Teljes takarítás";
+      const pre = (t.pre_actions || []).map(p => p.type === "fan_speed_control" ? `szívás: ${FAN_HU[p.params.value] || p.params.value}` : p.type === "water_usage_control" ? `víz: ${WATER_HU[p.params.value] || p.params.value}` : `mód: ${OPMODE_HU[p.params.value] || p.params.value}`);
+      const sw = el("input", { type: "checkbox" }); sw.checked = t.enabled;
+      sw.addEventListener("change", async () => { const ok = await act("#tmsg", () => write("PUT", `/api/v2/timers/${t.id}`, { ...t, enabled: sw.checked }), sw.checked ? "✓ Bekapcsolva." : "✓ Kikapcsolva."); if (!ok) sw.checked = !sw.checked; });
+      box.append(el("div", { class: "item" },
+        el("div", { class: "main" }, el("div", { class: "t1" }, `${pad2(L.hour)}:${pad2(L.minute)} · ${days.length === 7 ? "minden nap" : days.join(" ")}`),
+          el("div", { class: "t2" }, [t.label, what, ...pre].filter(Boolean).join(" · "))),
+        el("button", { class: "small", onclick: () => editTimer(t) }, "Szerkesztés"),
+        el("label", { class: "switch", title: "be/ki" }, sw, el("span"))));
+    }
+  } catch (e) { box.textContent = ""; box.append(el("div", { class: "empty" }, `Az időzítők nem tölthetők be: ${e.message}`)); }
+}
+async function editTimer(t) {
+  const isNew = !t;
+  const L = t ? timerLocal(t) : { days: [1, 2, 3, 4, 5], hour: 9, minute: 0 };
+  const label = el("input", { type: "text", value: t?.label || "", maxlength: 24, placeholder: "pl. Hétköznap reggel" });
+  const time = el("input", { type: "time", value: `${pad2(L.hour)}:${pad2(L.minute)}` });
+  const days = el("div", { class: "days" }, ...DAY_ORDER.map(d => { const c = el("input", { type: "checkbox", value: d }); c.checked = L.days.includes(d); return el("label", {}, c, el("span", {}, DAYS[d])); }));
+  const kind = el("select", {}, el("option", { value: "full_cleanup" }, "Teljes takarítás"), ...(timerProps?.supportedActions?.includes("segment_cleanup") ? [el("option", { value: "segment_cleanup" }, "Kiválasztott szobák")] : []));
+  kind.value = t?.action.type || "full_cleanup";
+  const chosen = new Set((t?.action.params.segment_ids || []).map(String));
+  const rooms = el("div", { class: "rooms-pick" }, ...(G?.segs || []).map(s => { const id = String(s.metaData.segmentId); const c = el("input", { type: "checkbox", value: id }); c.checked = chosen.has(id); return el("label", {}, c, segName(s)); }));
+  const iters = el("select", {}, el("option", { value: 1 }, "1×"), el("option", { value: 2 }, "2×"), el("option", { value: 3 }, "3×")); iters.value = String(t?.action.params.iterations || 1);
+  const roomRow = el("div", { class: "frow" }, el("label", {}, "Szobák"), rooms, el("div", { style: "margin-top:8px" }, iters));
+  const sync = () => roomRow.hidden = kind.value !== "segment_cleanup"; kind.addEventListener("change", sync); sync();
+  const preSel = (type, hu, cap) => { if (!timerProps?.supportedPreActions?.includes(type)) return null; const s = el("select", { "data-type": type }, el("option", { value: "" }, "nem változtat"));
+    api(`${CAP}${cap}/presets`).then(list => { for (const p of list) s.append(el("option", { value: p }, hu[p] || p)); const cur = (t?.pre_actions || []).find(x => x.type === type); if (cur) s.value = cur.params.value; }).catch(() => {}); return s; };
+  const pf = preSel("fan_speed_control", FAN_HU, "FanSpeedControlCapability"), pw = preSel("water_usage_control", WATER_HU, "WaterUsageControlCapability"), pm = preSel("operation_mode_control", OPMODE_HU, "OperationModeControlCapability");
+  const pre = el("div", { class: "frow" }, el("label", {}, "Indulás előtt állítsa be"),
+    ...[[pf, "Szívóerő"], [pm, "Üzemmód"], [pw, "Víz"]].filter(x => x[0]).map(([s, l]) => el("div", { class: "prow" }, el("span", {}, l), s)));
+  const enabled = el("input", { type: "checkbox" }); enabled.checked = t ? t.enabled : true;
+  const body = [el("div", { class: "frow" }, el("label", {}, "Név (nem kötelező)"), label), el("div", { class: "frow" }, el("label", {}, "Időpont (helyi idő)"), time),
+    el("div", { class: "frow" }, el("label", {}, "Napok"), days), el("div", { class: "frow" }, el("label", {}, "Feladat"), kind), roomRow, pre,
+    el("div", { class: "item" }, el("div", { class: "main" }, el("div", { class: "t1" }, "Bekapcsolva")), el("label", { class: "switch" }, enabled, el("span")))];
+  const buttons = [{ label: "Mégse", value: "no" }, { label: "Mentés", value: "ok", cls: "primary" }];
+  if (!isNew) buttons.unshift({ label: "Törlés", value: "del", cls: "danger" });
+  const r = await dialog(isNew ? "Új időzítő" : "Időzítő szerkesztése", body, buttons);
+  if (r === "del") { if (await confirmBox("Időzítő törlése", "Biztosan törlöd ezt az időzítőt?", "Törlés", true)) { await act("#tmsg", () => write("DELETE", `/api/v2/timers/${t.id}`), "✓ Törölve."); loadTimers(); } return; }
+  if (r !== "ok") return;
+  const dsel = [...days.querySelectorAll("input:checked")].map(c => Number(c.value));
+  if (!dsel.length) return say("#tmsg", "Legalább egy napot jelölj ki.", true);
+  const [hh, mm] = (time.value || "09:00").split(":").map(Number);
+  const utc = dsel.map(d => localToUtc(d, hh, mm));
+  const segIds = [...rooms.querySelectorAll("input:checked")].map(c => c.value);
+  if (kind.value === "segment_cleanup" && !segIds.length) return say("#tmsg", "Válassz legalább egy szobát.", true);
+  const payload = { enabled: enabled.checked, label: label.value.trim() || undefined, dow: utc.map(u => u.dow), hour: utc[0].hour, minute: utc[0].minute,
+    action: kind.value === "segment_cleanup" ? { type: "segment_cleanup", params: { segment_ids: segIds, iterations: Number(iters.value), custom_order: false } } : { type: "full_cleanup", params: {} },
+    pre_actions: [pf, pw, pm].filter(s => s && s.value).map(s => ({ type: s.dataset.type, params: { value: s.value } })) };
+  await act("#tmsg", () => isNew ? write("POST", "/api/v2/timers", payload) : write("PUT", `/api/v2/timers/${t.id}`, payload), "✓ Időzítő mentve.");
+  loadTimers();
+}
+$("#tadd").addEventListener("click", () => editTimer(null));
+
+/* -------------------------------- DND --------------------------------- */
+async function loadDnd() {
+  if (!state.caps.has("DoNotDisturbCapability")) { $("#dndcard").hidden = true; return; }
+  try {
+    const c = await api(`${CAP}DoNotDisturbCapability`);
+    const toLocal = (t) => { const d = new Date(); d.setUTCHours(t.hour, t.minute, 0, 0); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
+    $("#dnd-on").checked = !!c.enabled; $("#dnd-start").value = toLocal(c.start); $("#dnd-end").value = toLocal(c.end);
+  } catch (e) { say("#dndmsg", `Nem tölthető be: ${e.message}`, true); }
+}
+$("#dnd-save").addEventListener("click", () => {
+  const toUtc = (v) => { const [h, m] = v.split(":").map(Number); const d = new Date(); d.setHours(h, m, 0, 0); return { hour: d.getUTCHours(), minute: d.getUTCMinutes() }; };
+  act("#dndmsg", () => write("PUT", `${CAP}DoNotDisturbCapability`, { enabled: $("#dnd-on").checked, start: toUtc($("#dnd-start").value || "22:00"), end: toUtc($("#dnd-end").value || "08:00") }), "✓ Mentve.");
+});
+
+/* ------------------------------ settings ------------------------------ */
+async function loadSettings() {
+  renderServers();
+  $("#appcard").hidden = !NATIVE;
+  if (NATIVE && NATIVE.appVersion) $("#appver").textContent = `Verzió: ${NATIVE.appVersion()}`;
+  if (state.overview) renderConsumables(state.overview.consumables);
+  const show = (id, cap) => { $(id).hidden = !state.caps.has(cap); return state.caps.has(cap); };
+  if (show("#s-volume", "SpeakerVolumeControlCapability")) api(`${CAP}SpeakerVolumeControlCapability`).then(r => { $("#vol").value = r.volume; $("#volv").textContent = `${r.volume}%`; }).catch(() => {});
+  $("#voltest").hidden = !state.caps.has("SpeakerTestCapability");
+  if (show("#s-carpet", "CarpetModeControlCapability")) api(`${CAP}CarpetModeControlCapability`).then(r => $("#carpet").checked = r.enabled).catch(() => {});
+  if (show("#s-persist", "PersistentMapControlCapability")) api(`${CAP}PersistentMapControlCapability`).then(r => $("#persist").checked = r.enabled).catch(() => {});
+  if (show("#s-route", "CleanRouteControlCapability")) {
+    try { const [cur, props] = await Promise.all([api(`${CAP}CleanRouteControlCapability`), api(`${CAP}CleanRouteControlCapability/properties`)]);
+      const box = $("#route"); box.textContent = "";
+      for (const r of props.supportedRoutes || []) box.append(el("button", { class: r === cur.route ? "on" : "", onclick: async () => { if (await act("#setmsg", () => write("PUT", `${CAP}CleanRouteControlCapability`, { route: r }), "✓ Útvonal beállítva.")) loadSettings(); } }, ROUTE_HU[r] || r));
+    } catch (e) { $("#s-route").hidden = true; }
+  }
+}
+$("#vol").addEventListener("input", () => $("#volv").textContent = `${$("#vol").value}%`);
+$("#vol").addEventListener("change", () => act("#setmsg", () => write("PUT", `${CAP}SpeakerVolumeControlCapability`, { action: "set_volume", value: Number($("#vol").value) }), "✓ Hangerő beállítva."));
+$("#voltest").addEventListener("click", () => act("#setmsg", () => write("PUT", `${CAP}SpeakerTestCapability`, { action: "play_test_sound" }), "✓ Teszthang lejátszva."));
+$("#carpet").addEventListener("change", async (ev) => { const on = ev.target.checked;
+  if (!await act("#setmsg", () => write("PUT", `${CAP}CarpetModeControlCapability`, { action: on ? "enable" : "disable" }), `✓ Szőnyeg mód: ${on ? "be" : "ki"}.`)) ev.target.checked = !on; });
+$("#persist").addEventListener("change", async (ev) => { const on = ev.target.checked;
+  if (!on && !await confirmBox("Állandó térkép kikapcsolása", "Kikapcsolva a porszívó minden takarításnál új térképet készít, és elveszhetnek a szobák és tiltások. Biztosan kikapcsolod?", "Kikapcsolás", true)) { ev.target.checked = true; return; }
+  if (!await act("#setmsg", () => write("PUT", `${CAP}PersistentMapControlCapability`, { action: on ? "enable" : "disable" }), `✓ Állandó térkép: ${on ? "be" : "ki"}.`)) ev.target.checked = !on; });
+
+function renderConsumables(list) {
+  const cons = $("#cons"); cons.textContent = "";
+  if (!list || !list.length) { cons.append(el("div", { class: "empty" }, "Még nincs adat.")); return; }
+  for (const c of list) {
+    const key = `${c.type}/${c.sub_type}`, pct = c.percent;
+    const low = pct != null && pct <= 10, mid = pct != null && pct <= 25;
+    const left = c.unit === "percent" ? `${Math.round(c.value)}%` : `${c.hours_left} / ${c.life_hours || "?"} óra`;
+    const name = CONS_HU[key] || key;
+    const reset = el("button", { class: "small", onclick: async () => {
+      if (!await confirmBox("Fogyóeszköz nullázása", `Kicserélted: ${name}? A számláló újraindul.`, "Nullázás")) return;
+      if (await act("#consmsg", () => write("PUT", `${CAP}ConsumableMonitoringCapability/${c.type}/${c.sub_type}`, { action: "reset" }), `✓ ${name} nullázva.`)) setTimeout(refreshOverview, 1500);
+    } }, "Csere ✓");
+    cons.append(el("div", { class: "meter" },
+      el("div", { class: "row" }, el("span", { class: low || mid ? "st-warn" : "" }, (low ? "⚠ " : mid ? "⏳ " : "") + name + (low ? " – cserélni kell" : mid ? " – hamarosan" : "")), el("span", { class: "r" }, left, reset)),
+      el("div", { class: "track", role: "meter", "aria-valuenow": pct ?? 0, "aria-valuemin": 0, "aria-valuemax": 100 },
+        el("div", { class: "fill", style: `width:${pct ?? 0}%; background: var(${low ? "--critical" : mid ? "--warning" : "--series-1"})` }))));
+  }
+}
+
+/* ------------------------------ kapcsolat ------------------------------ */
+function renderServers() {
+  const box = $("#srvlist"); box.textContent = "";
+  if (!NATIVE) { box.append(el("div", { class: "empty" }, `Böngészőből: ${location.origin}. A címlista az appban számít.`)); $("#srvedit").hidden = true; return; }
+  CFG.servers.forEach((s, i) => box.append(el("div", { class: "item" }, el("div", { class: "main" },
+    el("div", { class: "t1" }, s), el("div", { class: "t2" }, (i === 0 ? "elsődleges" : "tartalék") + (s === activeBase ? " · most ezt használja" : ""))))));
+}
+$("#srvedit").addEventListener("click", async () => {
+  const ta = el("textarea", { rows: 4, style: "width:100%; font: inherit; padding: 9px; border-radius: 10px; border: 1px solid var(--border); background: var(--btn); color: var(--text-primary)" });
+  ta.value = CFG.servers.join("\n");
+  const r = await dialog("Szerver címek", [el("div", { class: "frow" }, el("label", {}, "Soronként egy cím, sorrendben próbálja (pl. http://192.168.1.69:8080)"), ta)],
+    [{ label: "Alapértelmezett", value: "def" }, { label: "Mégse", value: "no" }, { label: "Mentés", value: "ok", cls: "primary" }]);
+  if (r === "def") CFG.servers = DEFAULT_SERVERS.slice();
+  else if (r === "ok") { const list = ta.value.split(/\s+/).map(x => x.trim()).filter(x => /^https?:\/\//.test(x)); if (list.length) CFG.servers = list; }
+  else return;
+  activeBase = CFG.servers[0]; CFG.lastBase = activeBase; saveCfg(CFG); renderServers(); say("#srvmsg", "✓ Mentve."); refreshOverview();
+});
+$("#vlink").addEventListener("click", () => openExternal(state.valetudoUrl || "http://192.168.1.126/"));
+$("#apklink").addEventListener("click", () => openExternal(NATIVE ? `${activeBase}/porszi.apk` : "/porszi.apk"));
+
+/* ------------------------------ Wi-Fi varázsló ------------------------------ */
+const ROBOT_AP_IPS = ["192.168.5.1", "192.168.8.1", "10.201.126.1"];
+$("#wifichk").addEventListener("click", async () => {
+  say("#wifistatus", "Lekérdezem…");
+  try { const w = await api(`${CAP}WifiConfigurationCapability`);
+    say("#wifistatus", w.state === "connected" ? `✓ Csatlakozva: „${w.details?.ssid || "?"}”, jel: ${w.details?.signal ?? "?"} dBm, IP: ${(w.details?.ips || []).join(", ")}` : `Állapot: ${w.state}`);
+  } catch (e) { say("#wifistatus", `Nem sikerült: ${e.message}`, true); }
+});
+async function findRobotOnAp() {
+  const ips = [...ROBOT_AP_IPS]; try { const gw = NATIVE.wifiGateway(); if (gw && !ips.includes(gw)) ips.unshift(gw); } catch (e) {}
+  for (const ip of ips) {
+    try { const r = await nativeRequest("GET", `http://${ip}/api/v2/robot`, {}, null, 4000, "wifi");
+      if (r.status === 200) return { ip, info: JSON.parse(r.text) }; } catch (e) {}
+  }
+  return null;
+}
+$("#wifiwiz").addEventListener("click", async () => {
+  if (!NATIVE) { await dialog("Wi-Fi varázsló", [el("p", {}, "A varázsló a telefonos appban működik, mert ott a telefon közvetlenül a porszívó saját Wi-Fi-jére csatlakozik.")], [{ label: "Rendben", value: "ok", cls: "primary" }]); return; }
+  // 1. lépés
+  let r = await dialog("1/3 · Porszívó Wi-Fi módba", [
+    el("p", {}, "Nyomd meg és tartsd lenyomva a porszívón a két szélső gombot (kb. 5 mp), amíg megszólal. Ekkor a porszívó saját Wi-Fi-hálózatot nyit (neve kb. „viomi-vacuum-…”)."),
+    el("p", {}, "Ezután a telefon Wi-Fi-beállításaiban csatlakozz erre a hálózatra. Ha a telefon azt írja, hogy „nincs internet”, válaszd, hogy maradjon csatlakozva."),
+  ], [{ label: "Mégse", value: "no" }, { label: "Wi-Fi beállítások", value: "set" }, { label: "Csatlakoztam", value: "ok", cls: "primary" }]);
+  if (r === "set") { NATIVE.openWifiSettings(); r = await dialog("1/3 · Csatlakozás", [el("p", {}, "Ha csatlakoztál a porszívó Wi-Fi-jéhez, gyere vissza és nyomd meg a Tovább gombot.")], [{ label: "Mégse", value: "no" }, { label: "Tovább", value: "ok", cls: "primary" }]); }
+  if (r !== "ok") return;
+  // 2. lépés: keresés
+  say("#wifistatus", "Keresem a porszívót a saját Wi-Fi-jén…");
+  const found = await findRobotOnAp();
+  if (!found) { say("#wifistatus", "Nem találom a porszívót. Biztosan a porszívó Wi-Fi-jére csatlakozott a telefon? Próbáld újra.", true); return; }
+  say("#wifistatus", `✓ Megvan: ${found.info.manufacturer || ""} ${found.info.modelName || ""} (${found.ip})`);
+  // 3. lépés: SSID + jelszó
+  const ssid = el("input", { type: "text", value: CFG.lastSsid || "", placeholder: "Az otthoni Wi-Fi neve" });
+  const pw = el("input", { type: "password", placeholder: "Wi-Fi jelszó" });
+  const show = el("input", { type: "checkbox" }); show.addEventListener("change", () => pw.type = show.checked ? "text" : "password");
+  r = await dialog("2/3 · Otthoni Wi-Fi megadása", [
+    el("div", { class: "frow" }, el("label", {}, "Hálózat neve (SSID) – pontosan, kis- és nagybetűvel"), ssid),
+    el("div", { class: "frow" }, el("label", {}, "Jelszó"), pw, el("label", { style: "display:flex;gap:6px;align-items:center;margin-top:6px" }, show, "jelszó mutatása")),
+    el("p", { class: "hint" }, "A porszívó csak 2,4 GHz-es hálózatra tud csatlakozni."),
+  ], [{ label: "Mégse", value: "no" }, { label: "Beállítás", value: "ok", cls: "primary" }]);
+  if (r !== "ok" || !ssid.value.trim()) return;
+  CFG.lastSsid = ssid.value.trim(); saveCfg(CFG);
+  try {
+    const res = await nativeRequest("PUT", `http://${found.ip}${CAP}WifiConfigurationCapability`, { "Content-Type": "application/json" },
+      JSON.stringify({ ssid: ssid.value.trim(), credentials: { type: "wpa2_psk", typeSpecificSettings: { password: pw.value } } }), 15000, "wifi");
+    if (res.status >= 300) throw new Error(`HTTP ${res.status} ${res.text || ""}`);
+  } catch (e) {
+    // a porszívó a beállítás közben gyakran azonnal lebontja a saját Wi-Fi-jét – ez sikert is jelenthet
+    if (!/timeout|reset|closed|abort|failed to connect|unreachable/i.test(e.message)) { say("#wifistatus", `Nem sikerült: ${e.message}`, true); return; }
+  }
+  say("#wifistatus", "✓ Elküldve. A porszívó most átcsatlakozik az otthoni hálózatra (1–2 perc).");
+  await dialog("3/3 · Kész", [el("p", {}, "A porszívó megkapta az adatokat, és most csatlakozik az otthoni Wi-Fi-hez. Csatlakoztasd vissza a telefont is az otthoni Wi-Fi-re."),
+    el("p", {}, "1–2 perc múlva a porszívó újra megjelenik az appban. Ha nem, ellenőrizd a hálózat nevét és a jelszót, majd ismételd meg a varázslót.")],
+    [{ label: "Wi-Fi beállítások", value: "set" }, { label: "Rendben", value: "ok", cls: "primary" }]).then(v => { if (v === "set") NATIVE.openWifiSettings(); });
+});
+
+/* ------------------------------ app-frissítés ------------------------------ */
+const UPDATE_API = "https://api.github.com/repos/gonzodr/porszi/releases/latest";
+let pendingUpdate = null;
+function versionFromTag(tag) { const m = /v?\d+\.(\d+)/.exec(tag || ""); return m ? Number(m[1]) : 0; }
+async function checkUpdate(manual) {
+  if (!NATIVE || !NATIVE.appVersionCode) { if (manual) say("#updmsg", "A frissítés az appban működik.", true); return; }
+  const now = Date.now();
+  if (!manual && CFG.lastUpdateCheck && now - CFG.lastUpdateCheck < 6 * 3600e3) { if (CFG.knownUpdate) showUpdate(CFG.knownUpdate); return; }
+  if (manual) say("#updmsg", "Keresem…");
+  try {
+    const r = await nativeRequest("GET", UPDATE_API, { "Accept": "application/vnd.github+json", "User-Agent": "Porszi-app" }, null, 10000);
+    if (r.status !== 200) throw new Error(`GitHub: HTTP ${r.status}`);
+    const rel = JSON.parse(r.text);
+    const code = versionFromTag(rel.tag_name), mine = Number(NATIVE.appVersionCode());
+    const asset = (rel.assets || []).find(a => /\.apk$/i.test(a.name));
+    CFG.lastUpdateCheck = now;
+    if (asset && code > mine) { CFG.knownUpdate = { code, name: rel.name || rel.tag_name, url: asset.browser_download_url, notes: rel.body || "" }; showUpdate(CFG.knownUpdate); if (manual) say("#updmsg", `Új verzió érhető el: ${rel.tag_name}`); }
+    else { CFG.knownUpdate = null; $("#updbanner").hidden = true; if (manual) say("#updmsg", `✓ A legfrissebb verzió van telepítve (${NATIVE.appVersion()}).`); }
+    saveCfg(CFG);
+  } catch (e) { if (manual) say("#updmsg", `Nem sikerült ellenőrizni: ${e.message}`, true); }
+}
+function showUpdate(u) {
+  if (!u || u.code <= Number(NATIVE.appVersionCode())) { $("#updbanner").hidden = true; return; }
+  pendingUpdate = u; $("#updtext").textContent = `Új app-verzió: ${u.name}`; $("#updbanner").hidden = false; $("#updbtn").disabled = false;
+}
+$("#updbtn").addEventListener("click", async () => {
+  const u = pendingUpdate; if (!u) return;
+  const ok = (await dialog(`Frissítés: ${u.name}`, [el("p", { style: "white-space: pre-wrap" }, u.notes || "Új verzió érhető el."),
+    el("p", { class: "hint" }, "Letöltöm, majd az Android telepítője megkérdezi, hogy frissítse-e az appot.")],
+    [{ label: "Később", value: "no" }, { label: "Frissítés", value: "ok", cls: "primary" }])) === "ok";
+  if (!ok) return;
+  $("#updbtn").disabled = true; $("#updtext").textContent = "Letöltés…";
+  NATIVE.installUpdate(u.url);
+});
+window.__porsziUpdate = (st, info) => {
+  const t = $("#updtext");
+  if (st === "progress") t.textContent = `Letöltés… ${info}%`;
+  else if (st === "ready") { t.textContent = "Telepítő megnyitva – kövesd az Android utasításait."; $("#updbtn").disabled = false; }
+  else if (st === "permission") { t.textContent = "Engedélyezd a Porszi appnak az „ismeretlen alkalmazások telepítését”, majd nyomd meg újra a Frissítést."; $("#updbtn").disabled = false; }
+  else if (st === "error") { t.textContent = `Hiba a letöltésnél: ${info}`; $("#updbtn").disabled = false; }
+};
+$("#updcheck").addEventListener("click", () => checkUpdate(true));
+
+/* Android vissza gomb */
+window.porsziBack = () => {
+  const d = $("#dlg"); if (d.open) { d.close("no"); return true; }
+  if (state.view !== "home") { showView("home"); return true; }
+  return false;
+};
+
+/* ------------------------------- charts ------------------------------- */
+const tip = $("#tip");
+function showTip(html, x, y) { tip.innerHTML = html; tip.style.display = "block";
+  const tw = tip.offsetWidth; const left = Math.min(window.innerWidth - tw - 8, Math.max(8, x - tw / 2));
+  tip.style.left = `${left + window.scrollX}px`; tip.style.top = `${y + window.scrollY - tip.offsetHeight - 12}px`; }
+function hideTip() { tip.style.display = "none"; }
+const NS = "http://www.w3.org/2000/svg";
+const sv = (tag, a) => { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); return e; };
+function renderBattery(data) {
+  const box = $("#bchart"); box.textContent = "";
+  const pts = data.points.map(p => [new Date(p[0]).getTime(), p[1], p[2]]);
+  if (pts.length < 2) { box.append(el("div", { class: "empty" }, "Még kevés az adat – a gyűjtő percenként rögzít, hamarosan lesz görbe.")); return; }
+  const W = box.clientWidth || 320, H = 190, ml = 30, mr = 8, mt = 8, mb = 22;
+  const t1 = Date.now(), t0 = t1 - data.hours * 3600e3;
+  const X = t => ml + (t - t0) / (t1 - t0) * (W - ml - mr), Y = v => mt + (1 - v / 100) * (H - mt - mb);
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": "Akkumulátor töltöttsége az idő függvényében" });
+  for (const v of [0, 25, 50, 75, 100]) { svg.append(sv("line", { x1: ml, x2: W - mr, y1: Y(v), y2: Y(v), stroke: v === 0 ? css("--axis") : css("--grid"), "stroke-width": 1 }));
+    const t = sv("text", { x: ml - 6, y: Y(v) + 4, "text-anchor": "end" }); t.textContent = `${v}%`; svg.append(t); }
+  for (const [a, b] of data.sessions) { const xa = Math.max(ml, X(new Date(a).getTime())), xb = Math.min(W - mr, X(new Date(b).getTime()));
+    if (xb > xa) svg.append(sv("rect", { x: xa, y: mt, width: Math.max(2, xb - xa), height: H - mt - mb, fill: rgba("--series-1", 0.14) })); }
+  const ticks = W < 480 ? 3 : data.hours <= 168 && data.hours > 24 ? 7 : 6;
+  for (let i = 0; i <= ticks; i++) { const t = t0 + (t1 - t0) * i / ticks; const tx = sv("text", { x: X(t), y: H - 6, "text-anchor": i === 0 ? "start" : i === ticks ? "end" : "middle" });
+    tx.textContent = data.hours <= 24 ? new Date(t).toLocaleTimeString("hu-HU", { hour: "2-digit", minute: "2-digit" }) : new Date(t).toLocaleDateString("hu-HU", { month: "short", day: "numeric" }); svg.append(tx); }
+  let d = ""; pts.forEach((p, i) => { const x = X(p[0]), y = Y(p[1]); d += i ? `H${x.toFixed(1)}V${y.toFixed(1)}` : `M${x.toFixed(1)},${y.toFixed(1)}`; }); d += `H${X(t1).toFixed(1)}`;
+  svg.append(sv("path", { d, fill: "none", stroke: css("--series-1"), "stroke-width": 2, "stroke-linejoin": "round" }));
+  const last = pts[pts.length - 1];
+  svg.append(sv("circle", { cx: X(t1), cy: Y(last[1]), r: 4, fill: css("--series-1"), stroke: css("--surface-1"), "stroke-width": 2 }));
+  const cross = sv("line", { y1: mt, y2: H - mb, stroke: css("--axis"), "stroke-width": 1, visibility: "hidden" });
+  const dot = sv("circle", { r: 4, fill: css("--series-1"), stroke: css("--surface-1"), "stroke-width": 2, visibility: "hidden" });
+  svg.append(cross, dot);
+  const hit = sv("rect", { x: ml, y: 0, width: W - ml - mr, height: H, fill: "transparent" });
+  const STAT = { docked: "dokkon", cleaning: "takarít", returning: "hazatér", paused: "szünetel", idle: "áll", error: "hiba" };
+  hit.addEventListener("pointermove", (ev) => {
+    const r = svg.getBoundingClientRect(); const t = t0 + ((ev.clientX - r.left) * (W / r.width) - ml) / (W - ml - mr) * (t1 - t0);
+    let best = pts[0]; for (const p of pts) { if (p[0] <= t) best = p; else break; }
+    const x = X(Math.max(best[0], Math.min(t, t1))); cross.setAttribute("x1", x); cross.setAttribute("x2", x); cross.setAttribute("visibility", "visible");
+    dot.setAttribute("cx", x); dot.setAttribute("cy", Y(best[1])); dot.setAttribute("visibility", "visible");
+    showTip(`<b>${best[1]}%</b> · ${STAT[best[2]] || best[2] || ""}<div class="t">${fmtTime(new Date(Math.min(t, t1)).toISOString())}</div>`, r.left + x * r.width / W, r.top + Y(best[1]) * r.height / H);
+  });
+  hit.addEventListener("pointerleave", () => { cross.setAttribute("visibility", "hidden"); dot.setAttribute("visibility", "hidden"); hideTip(); });
+  svg.append(hit); box.append(svg);
+}
+function renderEfficiency(rows) {
+  const box = $("#echart"); box.textContent = "";
+  if (rows.length < 1) { box.append(el("div", { class: "empty" }, "Az első 5 percnél hosszabb takarítás után jelenik meg. Ha ez az érték hónapok alatt nő, az akku öregszik.")); $("#etxt").textContent = ""; return; }
+  const W = box.clientWidth || 320, H = 160, ml = 30, mr = 6, mt = 10, mb = 22;
+  const maxV = Math.max(1, ...rows.map(r => r.pct_per_min)) * 1.15;
+  const n = rows.length, slot = (W - ml - mr) / Math.max(n, 6), bw = Math.max(4, Math.min(28, slot - 2));
+  const Y = v => mt + (1 - v / maxV) * (H - mt - mb);
+  const svg = sv("svg", { viewBox: `0 0 ${W} ${H}`, height: H, role: "img", "aria-label": "Akkuhasználat percenként takarításonként" });
+  const step = maxV > 4 ? 1 : 0.5;
+  for (let v = 0; v <= maxV; v += step) { svg.append(sv("line", { x1: ml, x2: W - mr, y1: Y(v), y2: Y(v), stroke: v === 0 ? css("--axis") : css("--grid") }));
+    const t = sv("text", { x: ml - 6, y: Y(v) + 4, "text-anchor": "end" }); t.textContent = v.toFixed(step < 1 ? 1 : 0); svg.append(t); }
+  rows.forEach((r, i) => {
+    const x = ml + i * slot + (slot - bw) / 2, y = Y(r.pct_per_min), h = Y(0) - y, rr = Math.min(4, bw / 2, h);
+    const bar = sv("path", { d: `M${x},${Y(0)}V${y + rr}Q${x},${y} ${x + rr},${y}H${x + bw - rr}Q${x + bw},${y} ${x + bw},${y + rr}V${Y(0)}Z`, fill: css("--series-1") });
+    const hit = sv("rect", { x: ml + i * slot, y: mt, width: slot, height: H - mt - mb, fill: "transparent" });
+    hit.addEventListener("pointermove", (ev) => { bar.setAttribute("opacity", "0.8");
+      showTip(`<b>${r.pct_per_min}%/perc</b>${r.pct_per_10m2 != null ? ` · ${r.pct_per_10m2}%/10 m²` : ""}<div class="t">${fmtTime(r.started_at)} · ${FAN_HU[r.fan_speed] || r.fan_speed || ""}</div>`, ev.clientX, svg.getBoundingClientRect().top + y * svg.getBoundingClientRect().height / H); });
+    hit.addEventListener("pointerleave", () => { bar.setAttribute("opacity", "1"); hideTip(); });
+    svg.append(bar, hit);
+    if (n <= 8 || i === 0 || i === n - 1) { const t = sv("text", { x: x + bw / 2, y: H - 6, "text-anchor": "middle" }); t.textContent = new Date(r.started_at).toLocaleDateString("hu-HU", { month: "numeric", day: "numeric" }); svg.append(t); }
+  });
+  box.append(svg);
+  const avg = rows.reduce((s, r) => s + r.pct_per_min, 0) / n;
+  $("#etxt").textContent = `Átlag: ${avg.toFixed(2)} %/perc ${n} takarításból.` + (n >= 2 ? ` Legutóbbi: ${rows[n - 1].pct_per_min} %/perc.` : "");
+}
+function renderSessions(rows) {
+  const tb = $("#sessions"); tb.textContent = "";
+  if (!rows.length) { tb.append(el("tr", {}, el("td", { colspan: 8, class: "empty" }, "Még nincs rögzített takarítás – az első után itt jelenik meg."))); return; }
+  for (const r of rows) tb.append(el("tr", {},
+    el("td", {}, fmtTime(r.started_at, { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })), el("td", { class: "num" }, fmtDur(r.clean_time_s)),
+    el("td", { class: "num" }, r.area_m2 != null ? `${r.area_m2} m²` : "–"), el("td", { class: "num" }, r.battery_start != null ? `${r.battery_start}→${r.battery_end ?? "…"}%` : "–"),
+    el("td", {}, MODE_HU[r.mode] || r.mode || "teljes"), el("td", {}, FAN_HU[r.fan_speed] || r.fan_speed || "–"),
+    el("td", { class: "num" }, r.error_count ? `⚠ ${r.error_count}` : "–"), el("td", {}, r.ended_at ? (END_HU[r.end_reason] || r.end_reason) : "folyamatban")));
+}
+function renderErrors(rows) {
+  const box = $("#errors"); box.textContent = "";
+  if (!rows.length) { box.append(el("div", { class: "empty" }, "✓ Nincs rögzített hiba.")); return; }
+  for (const r of rows) box.append(el("div", { class: "err-row" }, el("span", { class: "when" }, fmtTime(r.ts)), el("span", {}, `⚠ ${r.message || "ismeretlen"} (${r.subsystem || "?"}, kód ${r.vendor_code})`)));
+}
+
+/* ------------------------------ refresh ------------------------------- */
+async function refreshOverview() { try { renderOverview(await api("/api/overview")); } catch (e) { $("#online").classList.remove("on"); $("#foot").textContent = `A dashboard nem éri el a szervert: ${e.message}`; } }
+async function refreshMap() { if (state.drag) return; try { buildMap(await api("/api/map")); } catch (e) { say("#mapmsg", `A térkép most nem elérhető (${e.message}).`); } }
+async function refreshCharts() {
+  if (state.view !== "stats") return;
+  try { renderBattery(await api(`/api/battery?hours=${state.hours}`)); } catch (e) {}
+  try { renderEfficiency(await api("/api/efficiency")); } catch (e) {}
+  try { renderSessions(await api("/api/sessions?limit=30")); } catch (e) {}
+  try { renderErrors(await api("/api/errors?limit=10")); } catch (e) {}
+}
+$("#btabs").addEventListener("click", (ev) => { const b = ev.target.closest("button"); if (!b) return;
+  state.hours = Number(b.dataset.h); $$("#btabs button").forEach(x => x.classList.toggle("on", x === b));
+  api(`/api/battery?hours=${state.hours}`).then(renderBattery).catch(() => {}); });
+
+let tick = 0;
+async function loop() {
+  const busy = ["cleaning", "returning", "moving", "paused"].includes(state.status);
+  await refreshOverview();
+  if (tick % (busy ? 1 : 12) === 0 && state.view === "home") await refreshMap();
+  if (tick % (busy ? 6 : 12) === 0) await refreshCharts();
+  tick++;
+  setTimeout(loop, busy ? 5000 : 10000);
+}
+let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { drawMap(); refreshCharts(); }, 200); });
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { drawMap(); refreshCharts(); });
+window.addEventListener("porszi-resume", () => { refreshOverview(); if (state.view === "home") refreshMap(); checkUpdate(false); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { refreshOverview(); if (state.view === "home") refreshMap(); } });
+(async () => {
+  try { state.caps = new Set(await api(CAP)); } catch (e) {}
+  if (NATIVE) document.documentElement.classList.add("app");
+  $("#mapmode [data-mode=zones]").hidden = !state.caps.has("ZoneCleaningCapability");
+  $("#mapmode [data-mode=restrict]").hidden = !state.caps.has("CombinedVirtualRestrictionsCapability");
+  loadPresets();
+  loop();
+  setTimeout(() => checkUpdate(false), 3000);
+})();
+</script>
+</body>
+</html>

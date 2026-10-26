@@ -1,0 +1,30 @@
+# --- titkok, helyi adatok: SOHA ne kerüljenek a repóba ---
+backend/config.json
+backend/room_names.json
+backend/*.db
+backend/*.db-*
+backend/*.log
+backend/*.log.*
+backend/latest_state.json
+backend/report.txt
+backend/dashboard_check.txt
+backend/web/porszi.apk
+robot/vacuum_*key*
+robot/vacuum_known_hosts
+robot/*_output.txt
+robot/valetudo-armv7*
+*.jks
+*.keystore
+keystore.properties
+
+# --- build ---
+__pycache__/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/app/src/main/assets/www/
+android/*.apk
+*.apk
+.idea/
+*.iml

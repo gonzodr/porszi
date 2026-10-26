@@ -1,0 +1,28 @@
+{
+  "host": "192.168.1.126",
+  "port": 80,
+  "username": "",
+  "password": "",
+  "db_path": "porszi.db",
+  "heartbeat_seconds": 60,
+  "stats_poll_seconds": 30,
+  "ntfy": {
+    "enabled": false,
+    "server": "https://ntfy.sh",
+    "topic": "",
+    "token": "",
+    "notify_start": false,
+    "notify_end": true,
+    "notify_errors": true,
+    "offline_minutes": 15,
+    "consumable_warn_percent": 10,
+    "consumable_warn_minutes": 600
+  },
+  "dashboard": {
+    "enabled": true,
+    "port": 8080,
+    "bind": "0.0.0.0",
+    "username": "",
+    "password": ""
+  }
+}

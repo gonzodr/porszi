@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 108dp adaptiv ikon; a lathato resz a kozepso ~66dp -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- porszivo test -->
+    <path android:fillColor="#3987E5"
+        android:pathData="M54,25 A29,29 0 1,1 53.99,25 Z" />
+    <path android:strokeColor="#F0EFEC" android:strokeWidth="3" android:fillColor="#00000000"
+        android:pathData="M54,25 A29,29 0 1,1 53.99,25 Z" />
+    <!-- lezer torony -->
+    <path android:fillColor="#F0EFEC"
+        android:pathData="M54,33 A7,7 0 1,1 53.99,33 Z" />
+    <!-- elso lokharito -->
+    <path android:strokeColor="#F0EFEC" android:strokeWidth="3.5" android:strokeLineCap="round"
+        android:pathData="M37,65 L71,65" />
+</vector>
