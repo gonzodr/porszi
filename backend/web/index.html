@@ -384,10 +384,13 @@ function fmtDur(s) { if (s == null) return "–"; const m = Math.round(s / 60); 
 const pad2 = (n) => String(n).padStart(2, "0");
 /* ---- hálózat: böngészőben fetch, appban a natív híd (LAN → Tailscale automatikus váltás) ---- */
 const NATIVE = window.PorsziNative || null;
-const DEFAULT_SERVERS = ["http://192.168.1.69:8080", "http://100.110.158.68:8080"];
+// Pi szerver (LAN, Tailscale), tartaleknak a regi PC-s cimek.
+const DEFAULT_SERVERS = ["http://192.168.1.70:8080", "http://100.105.77.81:8080", "http://192.168.1.69:8080", "http://100.110.158.68:8080"];
+const OLD_DEFAULTS = [["http://192.168.1.69:8080", "http://100.110.158.68:8080"]];
 function loadCfg() { try { return JSON.parse(localStorage.getItem("porszi.cfg")) || {}; } catch (e) { return {}; } }
 function saveCfg(c) { try { localStorage.setItem("porszi.cfg", JSON.stringify(c)); } catch (e) {} }
 let CFG = loadCfg(); if (!Array.isArray(CFG.servers) || !CFG.servers.length) CFG.servers = DEFAULT_SERVERS.slice();
+if (OLD_DEFAULTS.some(o => JSON.stringify(o) === JSON.stringify(CFG.servers))) { CFG.servers = DEFAULT_SERVERS.slice(); delete CFG.lastBase; saveCfg(CFG); }
 let activeBase = CFG.lastBase && CFG.servers.includes(CFG.lastBase) ? CFG.lastBase : CFG.servers[0];
 const pending = new Map(); let reqSeq = 0;
 window.__porsziCb = (id, status, text, err) => { const p = pending.get(id); if (!p) return; pending.delete(id);
@@ -934,7 +937,7 @@ function renderServers() {
 $("#srvedit").addEventListener("click", async () => {
   const ta = el("textarea", { rows: 4, style: "width:100%; font: inherit; padding: 9px; border-radius: 10px; border: 1px solid var(--border); background: var(--btn); color: var(--text-primary)" });
   ta.value = CFG.servers.join("\n");
-  const r = await dialog("Szerver címek", [el("div", { class: "frow" }, el("label", {}, "Soronként egy cím, sorrendben próbálja (pl. http://192.168.1.69:8080)"), ta)],
+  const r = await dialog("Szerver címek", [el("div", { class: "frow" }, el("label", {}, "Soronként egy cím, sorrendben próbálja (pl. http://192.168.1.70:8080)"), ta)],
     [{ label: "Alapértelmezett", value: "def" }, { label: "Mégse", value: "no" }, { label: "Mentés", value: "ok", cls: "primary" }]);
   if (r === "def") CFG.servers = DEFAULT_SERVERS.slice();
   else if (r === "ok") { const list = ta.value.split(/\s+/).map(x => x.trim()).filter(x => /^https?:\/\//.test(x)); if (list.length) CFG.servers = list; }

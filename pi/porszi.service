@@ -1,0 +1,14 @@
+[Unit]
+Description=Porszi backend (Valetudo gyujto + dashboard)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=gonzodr
+WorkingDirectory=/home/gonzodr/porszi/backend
+ExecStart=/usr/bin/python3 /home/gonzodr/porszi/backend/collector.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
